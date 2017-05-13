@@ -3,7 +3,7 @@ defmodule Mtproto2json.Connector do
   use GenServer
   import Kernel, except: [send: 2]
 
-  defstruct socket: nil, callback: nil
+  defstruct socket: nil, callback: nil, waiting: %{}
 
   @send_timeout Application.get_env(:mtproto2json, :send_timeout, 5000)
   @conn_timeout Application.get_env(:mtproto2json, :conn_timeout, 5000)
@@ -30,6 +30,20 @@ defmodule Mtproto2json.Connector do
     GenServer.call(via_tuple(port), {:send, data})
   end
 
+  def call(port, data)
+  when is_integer(port) do
+    call(via_tuple(port), data)
+  end
+
+  def call(addr, data)
+  when is_map(data) do
+    # TODO: generate id properly
+    # TODO: check if id is free
+    id = :rand.uniform(1000000)
+    data = data |> Map.put(:id, id) |> Poison.encode!
+    GenServer.call(addr, {:call, id, data <> "\n"})
+  end
+
   # callbacks
   def init([port, cb]) do
     {:ok, sock} = :gen_tcp.connect(
@@ -46,22 +60,39 @@ defmodule Mtproto2json.Connector do
     {:reply, resp, state}
   end
 
+  def handle_call({:call, id, data}, from, state=%{socket: sock}) do
+    Logger.debug "[calling] #{inspect data}"
+    :ok = :gen_tcp.send(sock, data)
+    waiting = state.waiting |> Map.put(id, from)
+    {:noreply, %{state | waiting: waiting}}
+  end
+
   def handle_info({:tcp_closed, in_sock}, %{socket: sock})
   when in_sock == sock do
     Logger.warn "socket closed"
     {:stop, :socket_closed, nil}
   end
 
-  def handle_info({:tcp, in_sock, data}, state=%{socket: sock, callback: cb})
+  def handle_info({:tcp, in_sock, data}, state=%{socket: sock, callback: cb, waiting: waiting})
   when in_sock == sock do
     Logger.debug "[tcp] #{data}"
-    with {:ok, res} <- Poison.decode(data) do
-      cb.(res)
-    else
-      err ->
-        Logger.warn "Poison decode error: #{inspect err}"
-    end
-    {:noreply, state}
+    new_state =
+      with {:ok, res} <- Poison.decode(data) do
+        case waiting[res["id"]] do
+          nil ->
+            cb.(res)
+            state
+          waiter ->
+            GenServer.reply(waiter, res)
+            waiting = state.waiting |> Map.delete(res["id"])
+            %{state | waiting: waiting}
+        end
+      else
+        err ->
+          Logger.warn "Poison decode error: #{inspect err}"
+          state
+      end
+    {:noreply, new_state}
   end
 
   def handle_info(info, state) do

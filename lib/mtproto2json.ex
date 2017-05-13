@@ -14,4 +14,8 @@ defmodule Mtproto2json do
   def send(port, data) do
     Mtproto2json.Connector.send(port, data)
   end
+
+  def call(port, data) do
+    Mtproto2json.Connector.call(port, data)
+  end
 end
