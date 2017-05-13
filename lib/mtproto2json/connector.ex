@@ -7,6 +7,7 @@ defmodule Mtproto2json.Connector do
 
   @send_timeout Application.get_env(:mtproto2json, :send_timeout, 5000)
   @conn_timeout Application.get_env(:mtproto2json, :conn_timeout, 5000)
+  @buffer_limit 16000000
 
   # interface
   def start_link(port, cb) do
@@ -48,7 +49,7 @@ defmodule Mtproto2json.Connector do
   def init([port, cb]) do
     {:ok, sock} = :gen_tcp.connect(
       'localhost', port,
-      [:binary, {:active, true}, {:packet, :line}, {:buffer, 1000000}, {:send_timeout, @send_timeout}],
+      [:binary, {:active, true}, {:packet, :line}, {:buffer, @buffer_limit}, {:send_timeout, @send_timeout}],
       @conn_timeout
     )
     {:ok, %__MODULE__{socket: sock, callback: cb}}
