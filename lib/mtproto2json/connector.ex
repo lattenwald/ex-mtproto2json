@@ -3,7 +3,7 @@ defmodule Mtproto2json.Connector do
   use GenServer
   import Kernel, except: [send: 2]
 
-  defstruct socket: nil, callback: nil, waiting: %{}
+  defstruct socket: nil, callback: nil, waiting: %{}, next_id: 0
 
   @send_timeout Application.get_env(:mtproto2json, :send_timeout, 5000)
   @conn_timeout Application.get_env(:mtproto2json, :conn_timeout, 5000)
@@ -38,11 +38,7 @@ defmodule Mtproto2json.Connector do
 
   def call(addr, data)
   when is_map(data) do
-    # TODO: generate id properly
-    # TODO: check if id is free
-    id = :rand.uniform(1000000)
-    data = data |> Map.put(:id, id) |> Poison.encode!
-    GenServer.call(addr, {:call, id, data <> "\n"})
+    GenServer.call(addr, {:call, data})
   end
 
   # callbacks
@@ -61,11 +57,12 @@ defmodule Mtproto2json.Connector do
     {:reply, resp, state}
   end
 
-  def handle_call({:call, id, data}, from, state=%{socket: sock}) do
+  def handle_call({:call, data}, from, state=%{socket: sock, next_id: id}) do
     Logger.debug "[calling] #{inspect data}"
-    :ok = :gen_tcp.send(sock, data)
+    data = data |> Map.put(:id, id) |> Poison.encode!
+    :ok = :gen_tcp.send(sock, data <> "\n")
     waiting = state.waiting |> Map.put(id, from)
-    {:noreply, %{state | waiting: waiting}}
+    {:noreply, %{state | waiting: waiting, next_id: id+1}}
   end
 
   def handle_info({:tcp_closed, in_sock}, %{socket: sock})
