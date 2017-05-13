@@ -1,7 +1,7 @@
 use Mix.Config
 
-config :porcelain,
-  driver: Porcelain.Driver.Basic
+# config :porcelain,
+#   driver: Porcelain.Driver.Basic
 
 config :mtproto2json,
   registry_name: :mtproto2json,

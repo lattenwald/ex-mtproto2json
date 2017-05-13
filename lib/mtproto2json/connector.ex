@@ -1,6 +1,7 @@
 defmodule Mtproto2json.Connector do
   require Logger
   use GenServer
+  import Kernel, except: [send: 2]
 
   defstruct socket: nil, callback: nil
 
@@ -15,27 +16,32 @@ defmodule Mtproto2json.Connector do
     )
   end
 
-  def send(port, data)
-  when is_integer(port) do
-    GenServer.call(via_tuple(port), {:send, data})
+  def send(addr, data)
+  when is_map(data) do
+    send(addr, Poison.encode!(data))
   end
 
-  def send(pid, data)
-  when is_pid(pid) do
-    GenServer.call(pid, {:send, data})
+  def send(port, data)
+  when is_integer(port) do
+    data = case String.last(data) do
+             "\n" -> data
+             _ -> data <> "\n"
+           end
+    GenServer.call(via_tuple(port), {:send, data})
   end
 
   # callbacks
   def init([port, cb]) do
     {:ok, sock} = :gen_tcp.connect(
       'localhost', port,
-      [:binary, {:active, true}, {:packet, :line}, {:send_timeout, @send_timeout}],
+      [:binary, {:active, true}, {:packet, :line}, {:buffer, 1000000}, {:send_timeout, @send_timeout}],
       @conn_timeout
     )
     {:ok, %__MODULE__{socket: sock, callback: cb}}
   end
 
   def handle_call({:send, data}, _from, state=%{socket: sock}) do
+    Logger.debug "[sending] #{inspect data}"
     resp = :gen_tcp.send(sock, data)
     {:reply, resp, state}
   end
@@ -48,9 +54,13 @@ defmodule Mtproto2json.Connector do
 
   def handle_info({:tcp, in_sock, data}, state=%{socket: sock, callback: cb})
   when in_sock == sock do
-    res = Poison.decode!(data)
-    Logger.debug "[tcp] #{inspect res}"
-    cb.(res)
+    Logger.debug "[tcp] #{data}"
+    with {:ok, res} <- Poison.decode(data) do
+      cb.(res)
+    else
+      err ->
+        Logger.warn "Poison decode error: #{inspect err}"
+    end
     {:noreply, state}
   end
 

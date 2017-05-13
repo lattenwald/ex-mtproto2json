@@ -20,14 +20,13 @@ defmodule Mtproto2json.Runner do
 
   # callbacks
   def init([port]) do
-    :ok = File.cd @dir
-    me = self()
     Porcelain.spawn(
       Path.join(@dir, "streamjson.py"),
       ["--verbose", "--port", to_string port],
+      dir: @dir,
       in: :receive,
-      out: {:send, me}, # FIXME: doesn't work?
-      err: {:send, me}  # FIXME: doesn't work?
+      out: {:send, self()},
+      err: {:send, self()}
     ) |> case do
            err = {:error, _} ->
              {:stop, err}
@@ -42,6 +41,12 @@ defmodule Mtproto2json.Runner do
   def handle_info({pid, :data, :out, data}, proc=%{pid: proc_pid})
   when proc_pid == pid do
     Logger.debug "[out] #{data}"
+    {:noreply, proc}
+  end
+
+  def handle_info({pid, :data, :err, data}, proc=%{pid: proc_pid})
+  when proc_pid == pid do
+    Logger.warn "[err] #{data}"
     {:noreply, proc}
   end
 
