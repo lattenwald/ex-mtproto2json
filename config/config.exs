@@ -3,6 +3,9 @@ use Mix.Config
 # config :porcelain,
 #   driver: Porcelain.Driver.Basic
 
+config :logger,
+  level: :info
+
 config :mtproto2json,
   registry_name: :mtproto2json,
   mtproto2json_dir: "/Users/aleksandrkusev/projects/mtproto2json",

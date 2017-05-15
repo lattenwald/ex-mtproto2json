@@ -7,8 +7,8 @@ defmodule Mtproto2json do
   #   cb = &module.handle/1
   # end
 
-  def new(name, fun \\ fn data -> IO.inspect data end) do
-    Mtproto2json.Sup.start_child(fun, name)
+  def new(name, session, fun \\ fn data -> IO.inspect data end) do
+    Mtproto2json.Sup.start_child(session, fun, name)
   end
 
   def send(name, data) do

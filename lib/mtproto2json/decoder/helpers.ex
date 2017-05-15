@@ -113,17 +113,17 @@ defmodule Mtproto2json.Decoder.Helpers do
   def decode(%{"_cons" => "updateUserStatus"}), do: nil
 
   def decode(%{"_cons" => cons}) do
-    Logger.warn "not decoding #{cons}"
+    Logger.debug "not decoding #{cons}"
     nil
   end
 
   def decode(map=%{}) do
-    Logger.warn "not decoding unknown map structure: #{inspect map}"
+    Logger.debug "not decoding unknown map structure: #{inspect map}"
     nil
   end
 
   def decode(other) do
-    Logger.warn "not decoding unknown data: #{inspect other}"
+    Logger.debug "not decoding unknown data: #{inspect other}"
     nil
   end
 

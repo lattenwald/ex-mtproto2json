@@ -46,7 +46,7 @@ defmodule Mtproto2json.Decoder do
   end
 
   def handle_info({:updates, updates}, state=%{callback: cb}) do
-    Logger.warn "processing updates #{inspect updates}"
+    Logger.debug "processing updates #{inspect updates}"
 
     updates
     |> Stream.filter(&not(is_nil(&1)))
@@ -66,12 +66,12 @@ defmodule Mtproto2json.Decoder do
   end
 
   defp process(_name, data) do
-    Logger.warn "not processing #{inspect data}"
+    Logger.debug "not processing #{inspect data}"
   end
 
   defp get_sender(_state, %{out: true}), do: :self
-  defp get_sender(%{users: users},  %{user_id: id}), do: users[id]
-  defp get_sender(%{users: users},  %{from_id: id}), do: users[id]
+  defp get_sender(%{users: users},  %{user_id: id}) when not(is_nil id), do: users[id]
+  defp get_sender(%{users: users},  %{from_id: id}) when not(is_nil id), do: users[id]
   defp get_sender(state, stuff) do
     Logger.warn "not getting sender for #{inspect stuff}"
     Logger.warn "in state #{inspect state}"

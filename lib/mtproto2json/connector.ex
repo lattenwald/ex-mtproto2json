@@ -10,11 +10,14 @@ defmodule Mtproto2json.Connector do
   @buffer_limit 16000000
 
   # interface
-  def start_link(port, cb, name \\ "noname") do
+  def start_link(port, session, cb, name \\ "noname") do
     Logger.info "#{__MODULE__} starting, named #{inspect name}"
-    GenServer.start_link(
+    Logger.debug "params: #{inspect port}, #{inspect session}, #{inspect cb}, #{inspect name}"
+    res = {:ok, _pid} = GenServer.start_link(
       __MODULE__, [port, cb], name: via_tuple(name)
     )
+    call(name, session) |> IO.inspect
+    res
   end
 
   def send(name, data=%{}) do

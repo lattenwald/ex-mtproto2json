@@ -46,7 +46,7 @@ defmodule Mtproto2json.Runner do
 
   def handle_info({pid, :data, :err, data}, proc=%{pid: proc_pid})
   when proc_pid == pid do
-    Logger.warn "[err] #{data}"
+    Logger.debug "[err] #{data}"
     {:noreply, proc}
   end
 
