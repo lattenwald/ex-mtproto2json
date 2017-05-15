@@ -3,19 +3,19 @@ defmodule Mtproto2json do
 
   def registry, do: @registry
 
-  def new(port) do
-    new(port, fn data -> IO.inspect data end)
+  # def start_link(module) do
+  #   cb = &module.handle/1
+  # end
+
+  def new(name, fun \\ fn data -> IO.inspect data end) do
+    Mtproto2json.Sup.start_child(fun, name)
   end
 
-  def new(port, cb) do
-    Mtproto2json.StreamersSupervisor.start_child(port, cb)
+  def send(name, data) do
+    Mtproto2json.Connector.send(name, data)
   end
 
-  def send(port, data) do
-    Mtproto2json.Connector.send(port, data)
-  end
-
-  def call(port, data) do
-    Mtproto2json.Connector.call(port, data)
+  def call(name, data) do
+    Mtproto2json.Connector.call(name, data)
   end
 end

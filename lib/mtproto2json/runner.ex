@@ -10,7 +10,7 @@ defmodule Mtproto2json.Runner do
   def start_link(port) do
     Logger.info "#{__MODULE__} starting on port #{port}"
     GenServer.start_link(
-      __MODULE__, [port], name: via_tuple(port)
+      __MODULE__, [port], name: __MODULE__
     )
   end
 
@@ -22,11 +22,11 @@ defmodule Mtproto2json.Runner do
   def init([port]) do
     Porcelain.spawn(
       Path.join(@dir, "streamjson.py"),
-      ["--verbose", "--port", to_string port],
+      ["--port", to_string port],
       dir: @dir,
-      in: :receive,
-      out: {:send, self()},
-      err: {:send, self()}
+      in: nil,
+      out: nil,
+      err: nil
     ) |> case do
            err = {:error, _} ->
              {:stop, err}
@@ -74,11 +74,8 @@ defmodule Mtproto2json.Runner do
     {:reply, proc, proc}
   end
 
-  def terminate(_reason, proc) do
+  def terminate(_reason, nil), do: :ok
+  def terminate(_reason, proc=%Proc{}) do
     Proc.stop(proc)
   end
-
-  # helpers
-  defp via_name(port), do: {Mtproto2json.registry(), {:runner, port}}
-  defp via_tuple(port), do: {:via, Registry, via_name(port)}
 end

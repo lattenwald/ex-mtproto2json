@@ -3,22 +3,24 @@ defmodule Mtproto2json.Sup do
   use Supervisor
 
   # interface
-  def start_link(port, cb) do
+  def start_link(port) do
     Logger.info "#{__MODULE__} starting"
 
     Supervisor.start_link(
       __MODULE__,
-      [port, cb]
+      port,
+      name: __MODULE__
     )
   end
 
-  # callbacks
-  def init([port, cb]) do
-    children = [
-      worker(Mtproto2json.Runner, [port]),
-      worker(Mtproto2json.Connector, [port, cb]),
-    ]
+  def start_child(cb, name) do
+    Supervisor.start_child(__MODULE__, [cb, name])
+  end
 
-    supervise(children, strategy: :rest_for_one)
+  # callbacks
+  def init(port) do
+    children = [ worker(Mtproto2json.Connector, [port]) ]
+
+    supervise(children, strategy: :simple_one_for_one)
   end
 end

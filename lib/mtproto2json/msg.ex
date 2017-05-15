@@ -15,4 +15,20 @@ defmodule Mtproto2json.Msg do
       offset_date: 0, offset_id: 0, offset_peer: cons("inputPeerEmpty"), limit: 0
     ) |> msg
   end
+
+  def chatMessage(chat_id, text) do
+    peer = "inputPeerChat" |> cons(chat_id: chat_id)
+    sendMessage(peer, text)
+  end
+
+  def userMessage(%{id: user_id, access_hash: access_hash}, text) do
+    peer = "inputPeerUser" |> cons(user_id: user_id, access_hash: access_hash)
+    sendMessage(peer, text)
+  end
+
+  def sendMessage(peer, text) do
+    "messages.sendMessage"
+    |> cons(peer: peer, message: text, random_id: :rand.uniform(1000000000))
+    |> msg
+  end
 end

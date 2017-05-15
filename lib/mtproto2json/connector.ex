@@ -3,42 +3,27 @@ defmodule Mtproto2json.Connector do
   use GenServer
   import Kernel, except: [send: 2]
 
-  defstruct socket: nil, callback: nil, waiting: %{}, next_id: 0
+  defstruct socket: nil, callback: nil, waiting: %{}, next_id: 1
 
   @send_timeout Application.get_env(:mtproto2json, :send_timeout, 5000)
   @conn_timeout Application.get_env(:mtproto2json, :conn_timeout, 5000)
   @buffer_limit 16000000
 
   # interface
-  def start_link(port, cb) do
-    Logger.info "#{__MODULE__} starting on port #{port}"
+  def start_link(port, cb, name \\ "noname") do
+    Logger.info "#{__MODULE__} starting, named #{inspect name}"
     GenServer.start_link(
-      __MODULE__, [port, cb], name: via_tuple(port)
+      __MODULE__, [port, cb], name: via_tuple(name)
     )
   end
 
-  def send(addr, data)
-  when is_map(data) do
-    send(addr, Poison.encode!(data))
+  def send(name, data=%{}) do
+    data = Poison.encode!(data) <> "\n"
+    GenServer.call(via_tuple(name), {:send, data})
   end
 
-  def send(port, data)
-  when is_integer(port) do
-    data = case String.last(data) do
-             "\n" -> data
-             _ -> data <> "\n"
-           end
-    GenServer.call(via_tuple(port), {:send, data})
-  end
-
-  def call(port, data)
-  when is_integer(port) do
-    call(via_tuple(port), data)
-  end
-
-  def call(addr, data)
-  when is_map(data) do
-    GenServer.call(addr, {:call, data})
+  def call(name, data=%{}) do
+    GenServer.call(via_tuple(name), {:call, data})
   end
 
   # callbacks
