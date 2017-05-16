@@ -11,6 +11,10 @@ defmodule Mtproto2json do
     Mtproto2json.Sup.start_child(session, fun, name)
   end
 
+  def stop(name, reason \\ :shutdown) do
+    Mtproto2json.Connector.Sup.stop(name, reason)
+  end
+
   def send(name, data) do
     Mtproto2json.Connector.send(name, data)
   end

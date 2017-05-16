@@ -106,7 +106,15 @@ defmodule Mtproto2json.Connector.Sup do
   # interface
   def start_link(port, session, cb, name \\ "noname") do
     Logger.info "#{__MODULE__} starting for port #{port}, name #{inspect name}"
-    Supervisor.start_link(__MODULE__, [port, session, cb, name])
+    Supervisor.start_link(
+      __MODULE__,
+      [port, session, cb, name],
+      name: via_tuple(name)
+    )
+  end
+
+  def stop(name, reason \\ :shutdown) do
+    Supervisor.stop(via_tuple(name), reason)
   end
 
   # callbacks
@@ -118,6 +126,10 @@ defmodule Mtproto2json.Connector.Sup do
 
     supervise(children, strategy: :one_for_all)
   end
+
+  # helpers
+  defp via_name(port), do: {Mtproto2json.registry(), {:connector_sup, port}}
+  defp via_tuple(port), do: {:via, Registry, via_name(port)}
 end
 
 defmodule Mtproto2json.Connector.Watchdog do

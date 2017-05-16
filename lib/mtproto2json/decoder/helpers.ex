@@ -55,16 +55,31 @@ defmodule Mtproto2json.Decoder.Helpers do
     struct(Channel, map)
   end
 
+  def decode(%{"_cons" => "keyboardButtonCallback", "text" => text, "data" => data}) do
+    %{text: text, data: data}
+  end
+
+  def decode(%{"_cons" => "keyboardButtonRow", "buttons" => buttons}) do
+    buttons |> Enum.map(&decode(&1))
+  end
+
+  def decode(%{"_cons" => "replyInlineMarkup", "rows" => rows}) do
+    buttons = rows |> Enum.flat_map(&decode(&1))
+    {:inlineMarkup, buttons}
+  end
+
   def decode(msg=%{"_cons" => "message"}) do
     out = decode(msg["out"]) || false
     media = decode(msg["media"])
+    reply_markup = decode(msg["reply_markup"])
 
     map = [:id, :from_id, :to_id, :user_id, :message]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
-    |> Enum.into(%{out: out, media: media})
+    |> Enum.into(%{out: out, media: media, reply_markup: reply_markup})
 
-    if map.message == "" and is_nil(media), do: Logger.warn "empty message: #{inspect msg}"
-    # if map.message == "", do: Logger.warn "empty message: #{inspect msg}"
+    if map.message == "" and is_nil(media) do
+      Logger.warn "empty message: #{inspect msg}"
+    end
 
     struct(Message, map)
   end
@@ -168,53 +183,4 @@ defmodule Mtproto2json.Decoder.Helpers do
     |> Enum.into(%{})
   end
 
-  def t do # TODO: removeme
-    %{"id" => 0,
-      "message" => %{
-        "_cons" => "updates",
-        "chats" => [
-          %{"_cons" => "channel", "date" => 1493567749,
-            "democracy" => %{"_cons" => "true"}, "id" => 1091311299,
-            "megagroup" => %{"_cons" => "true"}, "min" => %{"_cons" => "true"},
-            "photo" => %{
-              "_cons" => "chatPhoto",
-              "photo_big" => %{
-                "_cons" => "fileLocation", "dc_id" => 2,
-                "local_id" => 202049, "secret" => -8122666735636340086,
-                "volume_id" => 230111254},
-              "photo_small" => %{
-                "_cons" => "fileLocation", "dc_id" => 2,
-                "local_id" => 202047, "secret" => -5367001117789253139,
-                "volume_id" => 230111254}},
-            "title" => "Сумрачный Замок (Chat Wars)", "version" => 0}],
-        "date" => 1494776533, "seq" => 0,
-        "updates" => [
-          %{"_cons" => "updateNewChannelMessage",
-            "message" => %{
-              "_cons" => "message", "date" => 1494776533,
-              "entities" => [
-                %{"_cons" => "messageEntityMention", "length" => 12,
-                  "offset" => 24}],
-              "from_id" => 319324463, "id" => 51259,
-              "message" => "А, ты хочешь в темницу, @AlBagdadi11?",
-              "to_id" => %{"_cons" => "peerChannel", "channel_id" => 1091311299}},
-            "pts" => 56357, "pts_count" => 1}],
-        "users" => [
-          %{"_cons" => "user", "bot" => %{"_cons" => "true"},
-            "bot_chat_history" => %{"_cons" => "true"}, "bot_info_version" => 5,
-            "first_name" => "Опричник", "id" => 319324463,
-            "min" => %{"_cons" => "true"},
-            "photo" => %{
-              "_cons" => "userProfilePhoto",
-              "photo_big" => %{
-                "_cons" => "fileLocation", "dc_id" => 2,
-                "local_id" => 448136, "secret" => -7076650125228086396,
-                "volume_id" => 223023449},
-              "photo_id" => 1371488125854001067,
-              "photo_small" => %{
-                "_cons" => "fileLocation", "dc_id" => 2,
-                "local_id" => 448134, "secret" => 8661016411945357410,
-                "volume_id" => 223023449}},
-            "username" => "ChatWarsPoliceBot"}]}}
-  end
 end
