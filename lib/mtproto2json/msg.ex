@@ -45,4 +45,10 @@ defmodule Mtproto2json.Msg do
     end
     |> cons
   end
+
+  def inlineClick(peer, msg_id, data) do
+    "messages.getBotCallbackAnswer"
+    |> cons(msg_id: msg_id, data: data, peer: peer)
+    |> msg
+  end
 end

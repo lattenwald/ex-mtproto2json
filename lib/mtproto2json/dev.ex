@@ -21,7 +21,7 @@ defmodule Mtproto2json.Dev do
          other -> other
        end
 
-    IO.puts "#{name} [#{id}] #{pp s} -> #{pp r} : #{inspect markup} : #{msg}"
+    IO.puts "#{DateTime.to_string(DateTime.utc_now)} #{name} [#{id}] #{pp s} -> #{pp r} : #{inspect markup} : #{msg}"
   end
   defp pp(other, name), do: "#{name} #{inspect other}"
   defp pp(%{title: t}) when not(is_nil t), do: "(#{t})"
