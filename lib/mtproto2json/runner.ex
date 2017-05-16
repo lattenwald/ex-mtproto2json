@@ -9,9 +9,10 @@ defmodule Mtproto2json.Runner do
   # interface
   def start_link(port) do
     Logger.info "#{__MODULE__} starting on port #{port}"
-    GenServer.start_link(
+    res = GenServer.start_link(
       __MODULE__, [port], name: __MODULE__
     )
+    res
   end
 
   def proc(pid) do

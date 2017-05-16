@@ -7,5 +7,7 @@ defmodule Mtproto2json.Type.Channel do
 end
 
 defmodule Mtproto2json.Type.Message do
-  defstruct [:id, :from_id, :to_id, :chat_id, :user_id, :sender, :message, :out]
+  # TODO: keyboard from bot
+  # TODO: inline keyboard from bot
+  defstruct [:id, :from_id, :to_id, :chat_id, :user_id, :sender, :message, :out, :media]
 end

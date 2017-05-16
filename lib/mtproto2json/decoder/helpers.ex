@@ -1,8 +1,33 @@
 defmodule Mtproto2json.Decoder.Helpers do
   require Logger
+
   alias Mtproto2json.Type.User
   alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Message
+
+  require User
+  require Channel
+  require Message
+
+  def decode(%{"_cons" => "document", "attributes" => attrs}) do
+    attrList = attrs |> Enum.map(&(&1["_cons"]))
+    cond do
+      "documentAttributeSticker" in attrList -> :sticker
+      "documentAttributeAnimated" in attrList -> :animation
+      "documentAttributeVideo" in attrList -> :video
+      "documentAttributeAudio" in attrList -> :audio
+      ["documentAttributeFilename"] == attrList -> :file
+      true -> inspect attrList
+    end
+  end
+
+  def decode(%{"_cons" => "messageMediaDocument", "caption" => _caption, "document" => doc}) do
+    decode(doc)
+  end
+
+  def decode(%{"_cons" => "messageMediaPhoto", "caption" => _caption}) do
+    :photo
+  end
 
   def decode(user=%{"_cons" => "user"}) do
     bot = decode(user["bot"]) || false
@@ -32,10 +57,14 @@ defmodule Mtproto2json.Decoder.Helpers do
 
   def decode(msg=%{"_cons" => "message"}) do
     out = decode(msg["out"]) || false
+    media = decode(msg["media"])
 
     map = [:id, :from_id, :to_id, :user_id, :message]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
-    |> Enum.into(%{out: out})
+    |> Enum.into(%{out: out, media: media})
+
+    if map.message == "" and is_nil(media), do: Logger.warn "empty message: #{inspect msg}"
+    # if map.message == "", do: Logger.warn "empty message: #{inspect msg}"
 
     struct(Message, map)
   end
@@ -60,12 +89,11 @@ defmodule Mtproto2json.Decoder.Helpers do
   end
 
   def decode(msg=%{"_cons" => "updateShortMessage"}) do
-    out = decode(msg["out"]) || false |> IO.inspect
+    out = decode(msg["out"]) || false
 
     map = [:id, :from_id, :user_id, :message]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
     |> Enum.into(%{out: out})
-    |> IO.inspect
 
     msg = struct(Message, map)
 
@@ -92,6 +120,8 @@ defmodule Mtproto2json.Decoder.Helpers do
       # "updates" => updates,
       "dialogs" => dialogs,
     }) do
+    # Logger.warn inspect dialogs
+
     %{
       users:    decode2map(users),
       channels: decode2map(channels),
@@ -105,6 +135,9 @@ defmodule Mtproto2json.Decoder.Helpers do
 
   def decode(%{"_cons" => "true"}), do: true
   def decode(%{"_cons" => "false"}), do: false
+  def decode(%{"_cons" => "boolFalse"}), do: false
+  def decode(%{"_cons" => "boolTrue"}), do: true
+
   def decode(%{"message" => msg}), do: decode(msg)
 
   def decode(nil), do: nil

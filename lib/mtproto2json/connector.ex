@@ -8,6 +8,7 @@ defmodule Mtproto2json.Connector do
   @send_timeout Application.get_env(:mtproto2json, :send_timeout, 5000)
   @conn_timeout Application.get_env(:mtproto2json, :conn_timeout, 5000)
   @buffer_limit 16000000
+  @retry_connect_timeout 500
 
   # interface
   def start_link(port, session, cb, name \\ "noname") do
@@ -31,12 +32,19 @@ defmodule Mtproto2json.Connector do
 
   # callbacks
   def init([port, cb]) do
-    {:ok, sock} = :gen_tcp.connect(
-      'localhost', port,
-      [:binary, {:active, true}, {:packet, :line}, {:buffer, @buffer_limit}, {:send_timeout, @send_timeout}],
-      @conn_timeout
-    )
-    {:ok, %__MODULE__{socket: sock, callback: cb}}
+    with {:ok, sock} <- :gen_tcp.connect(
+           'localhost', port,
+           [:binary, {:active, true}, {:packet, :line}, {:buffer, @buffer_limit}, {:send_timeout, @send_timeout}],
+           @conn_timeout
+         ) do
+      {:ok, %__MODULE__{socket: sock, callback: cb}}
+    else
+      err = {:error, :econnrefused} ->
+        :timer.sleep @retry_connect_timeout
+        {:stop, err}
+
+      err -> {:stop, err}
+    end
   end
 
   def handle_call({:send, data}, _from, state=%{socket: sock}) do
@@ -89,4 +97,57 @@ defmodule Mtproto2json.Connector do
   # helpers
   defp via_name(port), do: {Mtproto2json.registry(), {:connector, port}}
   defp via_tuple(port), do: {:via, Registry, via_name(port)}
+end
+
+defmodule Mtproto2json.Connector.Sup do
+  require Logger
+  use Supervisor
+
+  # interface
+  def start_link(port, session, cb, name \\ "noname") do
+    Logger.info "#{__MODULE__} starting for port #{port}, name #{inspect name}"
+    Supervisor.start_link(__MODULE__, [port, session, cb, name])
+  end
+
+  # callbacks
+  def init([port, session, cb, name]) do
+    children = [
+      worker(Mtproto2json.Connector, [port, session, cb, name]),
+      worker(Mtproto2json.Connector.Watchdog, [name]),
+    ]
+
+    supervise(children, strategy: :one_for_all)
+  end
+end
+
+defmodule Mtproto2json.Connector.Watchdog do
+  require Logger
+  use GenServer
+
+  @watchdog_period 60000
+
+  # interface
+  def start_link(name) do
+    Logger.info "#{__MODULE__} starting for name #{inspect name}"
+    GenServer.start_link(__MODULE__, name)
+  end
+
+  # callbacks
+  def init(name) do
+    send self(), :watchdog
+    :timer.send_interval(@watchdog_period, :watchdog)
+    {:ok, name}
+  end
+
+  def handle_info(:watchdog, name) do
+    msg = Mtproto2json.Msg.updateStatus()
+    res = Mtproto2json.Connector.call(name, msg) |> Mtproto2json.Decoder.Helpers.decode
+    Logger.info "#{name} updating status: #{inspect res}"
+    {:noreply, name}
+  end
+
+  def handle_info(info, name) do
+    Logger.warn "unexpected info: #{inspect info}"
+    {:noreply, name}
+  end
 end

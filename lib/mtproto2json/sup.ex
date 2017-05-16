@@ -19,7 +19,7 @@ defmodule Mtproto2json.Sup do
 
   # callbacks
   def init(port) do
-    children = [ worker(Mtproto2json.Connector, [port]) ]
+    children = [ supervisor(Mtproto2json.Connector.Sup, [port]) ]
 
     supervise(children, strategy: :simple_one_for_one)
   end

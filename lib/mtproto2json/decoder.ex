@@ -52,6 +52,10 @@ defmodule Mtproto2json.Decoder do
     |> Stream.filter(&not(is_nil(&1)))
     |> Stream.map(&Map.put(&1, :sender,    get_sender(state, &1)))
     |> Stream.map(&Map.put(&1, :recipient, get_recipient(state, &1)))
+    |> Stream.map(fn m=%{sender: s, recipient: r} ->
+      if is_nil(s) or is_nil(r), do: Logger.warn inspect m
+      m
+    end)
     |> Enum.map(&cb.(&1))
 
     {:noreply, state}
@@ -69,12 +73,18 @@ defmodule Mtproto2json.Decoder do
     Logger.debug "not processing #{inspect data}"
   end
 
-  defp get_sender(_state, %{out: true}), do: :self
+  defp get_sender(_state, msg=%{out: true}), do: :self
   defp get_sender(%{users: users},  %{user_id: id}) when not(is_nil id), do: users[id]
   defp get_sender(%{users: users},  %{from_id: id}) when not(is_nil id), do: users[id]
+  defp get_sender(
+    %{channels: channels},
+    %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}}
+  ) when not(is_nil id) do
+    channels[id]
+  end
   defp get_sender(state, stuff) do
-    Logger.warn "not getting sender for #{inspect stuff}"
-    Logger.warn "in state #{inspect state}"
+    Logger.warn "failed detecting sender #{inspect stuff}"
+    nil
   end
 
   def get_recipient(
@@ -82,13 +92,19 @@ defmodule Mtproto2json.Decoder do
     %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}}
   ), do: channels[id]
   def get_recipient(
-    %{users: users},
-    %{out: true, user_id: id}
-  ), do: users[id]
+    %{channels: channels},
+    %{to_id: %{"_cons" => "peerChat", "chat_id" => id}}
+  ), do: channels[id]
   def get_recipient(
     %{users: users},
-    %{user_id: id}
-  ) when not(is_nil id), do: :self
-  def get_recipient(%{channels: channels}, %{chat_id: id}), do: channels[id]
+    %{to_id: %{"_cons" => "peerUser", "user_id" => id}}
+  ), do: users[id]
+  def get_recipient(%{users: users}, %{out: true, user_id: id}) when not(is_nil id), do: users[id]
+  def get_recipient(%{users: users}, %{user_id: id}) when not(is_nil id), do: :self
+  def get_recipient(%{channels: channels}, %{chat_id: id}) when not(is_nil id), do: channels[id]
+  def get_recipient(_state, other) do
+    Logger.warn "failed detecting recipient #{inspect other}"
+    nil
+  end
 
 end
