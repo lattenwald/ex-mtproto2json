@@ -26,4 +26,5 @@ defmodule Mtproto2json do
   def find_user(name, id) do
     Mtproto2json.Decoder.find(name, :users, id)
   end
+
 end

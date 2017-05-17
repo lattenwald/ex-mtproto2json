@@ -9,7 +9,7 @@ defmodule Mtproto2json.Decoder do
 
   # interface
   def start_link(name, cb) do
-    Logger.info "#{__MODULE__} starting"
+    Logger.info "#{__MODULE__} starting, named #{inspect name}"
     GenServer.start_link(__MODULE__, cb, name: via_tuple(name))
   end
 
