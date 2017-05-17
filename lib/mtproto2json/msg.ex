@@ -68,6 +68,8 @@ defmodule Mtproto2json.Msg do
     |> msg
   end
 
+  def inputPeer(nil), do: nil
+
   def inputPeer(%User{access_hash: access_hash, id: id}) do
     %{"_cons" => "inputPeerUser", "user_id" => id, "access_hash" => access_hash}
   end
