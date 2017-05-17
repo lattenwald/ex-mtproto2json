@@ -18,4 +18,12 @@ defmodule Mtproto2json do
   def call(name, data) do
     Mtproto2json.Connector.call(name, data)
   end
+
+  def find_channel(name, id) do
+    Mtproto2json.Decoder.find(name, :channels, id)
+  end
+
+  def find_user(name, id) do
+    Mtproto2json.Decoder.find(name, :users, id)
+  end
 end

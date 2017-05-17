@@ -18,6 +18,11 @@ defmodule Mtproto2json.Decoder do
     process(name, decoded)
   end
 
+  def find(name, what, id)
+  when what in [:channels, :users] do
+    GenServer.call(via_tuple(name), {:find, what, id})
+  end
+
   def get_state(name) do
     GenServer.call(via_tuple(name), :get_state)
   end
@@ -40,6 +45,15 @@ defmodule Mtproto2json.Decoder do
     end
 
     {:reply, :ok, new_state}
+  end
+
+  def handle_call({:find, what, id}, _from, state) do
+    res = case what do
+            :channels -> state.channels[id]
+            :users    -> state.users[id]
+            _         -> nil
+          end
+    {:reply, res, state}
   end
 
   def handle_call(:get_state, _from, state) do
