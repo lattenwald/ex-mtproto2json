@@ -3,10 +3,6 @@ defmodule Mtproto2json do
 
   def registry, do: @registry
 
-  # def start_link(module) do
-  #   cb = &module.handle/1
-  # end
-
   def new(name, session, fun \\ fn data -> IO.inspect data end) do
     Mtproto2json.Sup.start_child(session, fun, name)
   end

@@ -36,10 +36,6 @@ defmodule Mtproto2json.Dev do
     end
 
     Mtproto2json.new name, auth(authfile), cb
-    # Mtproto2json.call name, auth(authfile)
-    # dialogs = Mtproto2json.call name, Mtproto2json.Msg.getDialogs
-    # Mtproto2json.Decoder.incoming name, dialogs
-    # Mtproto2json.send name, Mtproto2json.Msg.getState
   end
 
   def tochat(what, chat_id \\ 241270154, name \\ 1) do

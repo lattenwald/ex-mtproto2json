@@ -59,13 +59,25 @@ defmodule Mtproto2json.Decoder.Helpers do
     %{text: text, data: data}
   end
 
+  def decode(%{"_cons" => "keyboardButton", "text" => text}) do
+    %{text: text}
+  end
+
   def decode(%{"_cons" => "keyboardButtonRow", "buttons" => buttons}) do
     buttons |> Enum.map(&decode(&1))
   end
 
   def decode(%{"_cons" => "replyInlineMarkup", "rows" => rows}) do
     buttons = rows |> Enum.flat_map(&decode(&1))
-    {:inlineMarkup, buttons}
+    if nil in buttons do
+      Logger.warn "markup not decoded: #{inspect rows}"
+    end
+    {:inline_markup, buttons}
+  end
+
+  def decode(%{"_cons" => "replyKeyboardMarkup", "rows" => rows}) do
+    buttons = rows |> Enum.flat_map(&decode(&1))
+    {:keyboard_markup, buttons}
   end
 
   def decode(msg=%{"_cons" => "message"}) do
