@@ -33,8 +33,13 @@ defmodule Mtproto2json.Decoder do
   end
 
   def handle_call({:incoming, data}, _from, state) do
-    new_users = Map.merge(state.users, data[:users] || %{})
-    new_channels = Map.merge(state.channels, data[:channels] || %{})
+    merger = fn
+      _k, %{access_hash: nil}, v2 -> v2
+      _k, v1, _v2 -> v1
+    end
+
+    new_users = Map.merge(state.users, data[:users] || %{}, merger)
+    new_channels = Map.merge(state.channels, data[:channels] || %{}, merger)
 
     new_state = state
     |> Map.put(:users, new_users)
