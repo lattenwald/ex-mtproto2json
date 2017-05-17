@@ -21,6 +21,7 @@ defmodule Mtproto2json.Runner do
 
   # callbacks
   def init([port]) do
+    Logger.info "streamjson dir: #{@dir}"
     Porcelain.spawn(
       Path.join(@dir, "streamjson.py"),
       ["--port", to_string port],
