@@ -55,7 +55,19 @@ defmodule Mtproto2json.Decoder.Helpers do
     struct(Channel, map)
   end
 
-  def decode(%{"_cons" => "keyboardButtonCallback", "text" => text, "data" => data}) do
+  def decode(
+    %{"_cons" => "keyboardButtonSwitchInline",
+      "query" => query,
+      "text" => text}
+  ) do
+    %{text: text, query: query}
+  end
+
+  def decode(
+    %{"_cons" => "keyboardButtonCallback",
+      "text" => text,
+      "data" => data}
+  ) do
     %{text: text, data: data}
   end
 
