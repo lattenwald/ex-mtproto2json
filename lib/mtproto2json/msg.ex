@@ -1,6 +1,9 @@
 defmodule Mtproto2json.Msg do
   @random_upper 1000000000
 
+  alias Mtproto2json.Type.User
+  alias Mtproto2json.Type.Channel
+
   def cons(constructor, params \\ []) do
     Enum.into(params, %{:_cons => constructor})
   end
@@ -54,9 +57,33 @@ defmodule Mtproto2json.Msg do
     |> msg
   end
 
-  def forward(to_peer, from_peer, msg_id) when is_integer(msg_id) do
+  def forwardMessages(to, from, msg_ids) do
+    to_peer = inputPeer(to)
+    from_peer = inputPeer(from)
+    random_ids = msg_ids |> Enum.map(fn _ -> :rand.uniform(@random_upper) end)
+
     "messages.forwardMessages"
     |> cons(from_peer: from_peer, to_peer: to_peer,
-    id: [msg_id], random_id: :rand.uniform(@random_upper))
+    id: msg_ids, random_id: random_ids)
+    |> msg
+  end
+
+  def inputPeer(%User{access_hash: access_hash, id: id}) do
+    %{"_cons" => "inputPeerUser", "user_id" => id, "access_hash" => access_hash}
+  end
+
+  def inputPeer(%Channel{access_hash: access_hash, id: id}) do
+    %{"_cons" => "inputPeerChannel", "user_id" => id, "access_hash" => access_hash}
+  end
+
+  def forwardMessage(to, from, msg_id) do
+    to_peer = inputPeer(to)
+    from_peer = inputPeer(from)
+    random_id = :rand.uniform(@random_upper)
+
+    "messages.forwardMessage"
+    |> cons(from_peer: from_peer, to_peer: to_peer,
+    id: msg_id, random_id: random_id)
+    |> msg
   end
 end
