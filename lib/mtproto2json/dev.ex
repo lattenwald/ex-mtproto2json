@@ -12,7 +12,11 @@ defmodule Mtproto2json.Dev do
   end
 
   # defp pp(msg), do: IO.inspect msg
-  defp pp(%{id: id, sender: s, recipient: r, message: m, media: media, reply_markup: markup}, name) do
+  defp pp(
+    %{id: id, sender: s, recipient: r, replyto: rto,
+      message: m, media: media, reply_markup: markup
+    }, name
+  ) do
     msg = m
     |> String.replace("\n", "\\n")
     |> String.slice(0, 100)
@@ -21,7 +25,7 @@ defmodule Mtproto2json.Dev do
          other -> other
        end
 
-    IO.puts "#{DateTime.to_string(DateTime.utc_now)} #{name} [#{id}] #{pp s} -> #{pp r} : #{inspect markup} : #{msg}"
+    IO.puts "#{DateTime.to_string(DateTime.utc_now)} #{name} [#{id}] #{pp s} -> #{pp r} : #{pp rto} : #{inspect markup} : #{msg}"
   end
   defp pp(other, name), do: "#{name} #{inspect other}"
   defp pp(%{title: t}) when not(is_nil t), do: "(#{t})"

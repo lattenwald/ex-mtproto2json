@@ -3,6 +3,7 @@ defmodule Mtproto2json.Decoder do
   use GenServer
 
   alias Mtproto2json.Decoder.Helpers
+  alias Mtproto2json.Type.Channel
 
   defstruct users: %{}, channels: %{}, callback: nil
 
@@ -52,6 +53,7 @@ defmodule Mtproto2json.Decoder do
     |> Stream.filter(&not(is_nil(&1)))
     |> Stream.map(&Map.put(&1, :sender,    get_sender(state, &1)))
     |> Stream.map(&Map.put(&1, :recipient, get_recipient(state, &1)))
+    |> Stream.map(&Map.put(&1, :replyto, get_replyto(&1)))
     |> Stream.map(fn m=%{sender: s, recipient: r} ->
       if is_nil(s) or is_nil(r), do: Logger.warn inspect m
       m
@@ -106,5 +108,9 @@ defmodule Mtproto2json.Decoder do
     Logger.warn "failed detecting recipient #{inspect other}"
     nil
   end
+
+  def get_replyto(%{recipient: r = %Channel{}}), do: r
+  def get_replyto(%{sender: :self, recipient: r}), do: r
+  def get_replyto(%{sender: s}), do: s
 
 end

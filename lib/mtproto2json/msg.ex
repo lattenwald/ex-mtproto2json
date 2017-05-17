@@ -1,4 +1,6 @@
 defmodule Mtproto2json.Msg do
+  @random_upper 1000000000
+
   def cons(constructor, params \\ []) do
     Enum.into(params, %{:_cons => constructor})
   end
@@ -28,7 +30,7 @@ defmodule Mtproto2json.Msg do
 
   def sendMessage(peer, text) do
     "messages.sendMessage"
-    |> cons(peer: peer, message: text, random_id: :rand.uniform(1000000000))
+    |> cons(peer: peer, message: text, random_id: :rand.uniform(@random_upper))
     |> msg
   end
 
@@ -50,5 +52,11 @@ defmodule Mtproto2json.Msg do
     "messages.getBotCallbackAnswer"
     |> cons(msg_id: msg_id, data: data, peer: peer)
     |> msg
+  end
+
+  def forward(to_peer, from_peer, msg_id) when is_integer(msg_id) do
+    "messages.forwardMessages"
+    |> cons(from_peer: from_peer, to_peer: to_peer,
+    id: [msg_id], random_id: :rand.uniform(@random_upper))
   end
 end
