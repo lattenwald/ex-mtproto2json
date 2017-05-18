@@ -75,7 +75,7 @@ defmodule Mtproto2json.Msg do
   end
 
   def inputPeer(%Channel{access_hash: access_hash, id: id}) do
-    %{"_cons" => "inputPeerChannel", "user_id" => id, "access_hash" => access_hash}
+    %{"_cons" => "inputPeerChannel", "channel_id" => id, "access_hash" => access_hash}
   end
 
   def forwardMessage(to, from, msg_id) do
