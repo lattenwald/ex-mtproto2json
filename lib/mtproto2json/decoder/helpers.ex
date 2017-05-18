@@ -56,6 +56,21 @@ defmodule Mtproto2json.Decoder.Helpers do
   end
 
   def decode(
+    %{"_cons" => "keyboardButtonUrl",
+      "text" => text,
+      "url" => url}
+  ) do
+    %{text: text, url: url}
+  end
+
+  def decode(
+    %{"_cons" => "keyboardButtonGame",
+      "text" => text}
+  ) do
+    %{game_text: text}
+  end
+
+  def decode(
     %{"_cons" => "keyboardButtonSwitchInline",
       "query" => query,
       "text" => text}

@@ -14,7 +14,7 @@ defmodule Mtproto2json.Msg do
 
   def getState, do: "updates.getState" |> cons |> msg
 
-  def getDialogs(limit \\ 0, offset_id \\ 0) do
+  def getDialogs(_limit \\ 0, _offset_id \\ 0) do
     cons(
       "messages.getDialogs",
       offset_date: 0, offset_id: 0, offset_peer: cons("inputPeerEmpty"), limit: 0
