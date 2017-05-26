@@ -3,8 +3,8 @@ defmodule Mtproto2json do
 
   def registry, do: @registry
 
-  def new(name, session, fun \\ fn data -> IO.inspect data end) do
-    Mtproto2json.Sup.start_child(session, fun, name)
+  def new(name, handler, session) do
+    Mtproto2json.Workers.start_child(name, handler, session)
   end
 
   def stop(name, reason \\ :shutdown) do
@@ -19,8 +19,8 @@ defmodule Mtproto2json do
     Mtproto2json.Connector.call(name, data)
   end
 
-  def find_channel(name, id) do
-    Mtproto2json.Decoder.find(name, :channels, id)
+  def find_chat(name, id) do
+    Mtproto2json.Decoder.find(name, :chats, id)
   end
 
   def find_user(name, id) do
