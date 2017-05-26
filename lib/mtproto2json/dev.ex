@@ -11,35 +11,8 @@ defmodule Mtproto2json.Dev do
     |> Map.delete("id")
   end
 
-  # defp pp(msg), do: IO.inspect msg
-  defp pp(
-    %{id: id, sender: s, recipient: r, replyto: rto,
-      message: m, media: media, reply_markup: markup
-    }, name
-  ) do
-    msg = m
-    |> String.replace("\n", "\\n")
-    |> String.slice(0, 100)
-    |> case do
-         "" -> inspect media
-         other -> other
-       end
-
-    IO.puts "#{DateTime.to_string(DateTime.utc_now)} #{name} [#{id}] #{pp s} -> #{pp r} : #{pp rto} : #{inspect markup} : #{msg}"
-  end
-  defp pp(other, name), do: "#{name} #{inspect other}"
-  defp pp(%{title: t}) when not(is_nil t), do: "(#{t})"
-  defp pp(%{username: u}) when not(is_nil u), do: "@#{u}"
-  defp pp(%{first_name: f}) when not(is_nil f), do: f
-  defp pp(other), do: inspect other
-
   def start(name, authfile) do
-    Mtproto2json.Decoder.start_link(name, fn msg -> pp(msg, "#{name} ") end)
-    cb = fn data ->
-      Mtproto2json.Decoder.incoming(name, data)
-    end
-
-    Mtproto2json.new name, auth(authfile), cb
+    Mtproto2json.new name, Mtproto2json.DevHandler, auth(authfile)
   end
 
   def tochat(what, chat_id \\ 241270154, name \\ 1) do
@@ -54,4 +27,46 @@ defmodule Mtproto2json.Dev do
   def decstate(name) do
     Mtproto2json.Decoder.get_state name
   end
+end
+
+defmodule Mtproto2json.DevHandler do
+  require Logger
+  use GenEvent
+
+  alias Mtproto2json.Type.Message
+  alias Mtproto2json.Type.User
+  alias Mtproto2json.Type.Chat
+
+  def handle_event(event, state) do
+    Logger.debug "#{inspect event}"
+    pp event
+    {:ok, state}
+  end
+
+  # defp pp(msg), do: IO.inspect msg
+  defp pp(%Message{
+        id: id,
+        sender: s,
+        recipient: r,
+        replyto: rto,
+        message: m,
+        media: media,
+        reply_markup: markup
+    }
+  ) do
+    msg = m
+    |> String.replace("\n", "\\n")
+    |> String.slice(0, 100)
+    |> case do
+         "" -> inspect media
+         other -> other
+       end
+
+    IO.puts "#{DateTime.to_string(DateTime.utc_now)} [#{id}] #{pp s} -> #{pp r} : #{pp rto} : #{inspect markup} : #{msg}"
+  end
+  defp pp(other, name), do: "#{name} #{inspect other}"
+  defp pp(%Chat{title: t}) when not(is_nil t), do: "(#{t})"
+  defp pp(%User{username: u}) when not(is_nil u), do: "@#{u}"
+  defp pp(%User{first_name: f}) when not(is_nil f), do: f
+  defp pp(other), do: inspect other
 end

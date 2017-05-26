@@ -2,11 +2,11 @@ defmodule Mtproto2json.Decoder.Helpers do
   require Logger
 
   alias Mtproto2json.Type.User
-  alias Mtproto2json.Type.Channel
+  alias Mtproto2json.Type.Chat
   alias Mtproto2json.Type.Message
 
   require User
-  require Channel
+  require Chat
   require Message
 
   def decode(%{"_cons" => "document", "attributes" => attrs}) do
@@ -44,15 +44,7 @@ defmodule Mtproto2json.Decoder.Helpers do
     |> Enum.map(&({&1, chan[Atom.to_string &1]}))
     |> Enum.into(%{})
 
-    struct(Channel, map)
-  end
-
-  def decode(chan=%{"_cons" => "chat"}) do
-    map = [:id, :title, :access_hash]
-    |> Enum.map(&({&1, chan[Atom.to_string &1]}))
-    |> Enum.into(%{})
-
-    struct(Channel, map)
+    struct(Chat, map)
   end
 
   def decode(
@@ -126,7 +118,7 @@ defmodule Mtproto2json.Decoder.Helpers do
   def decode(
     %{
       "_cons" => cons,
-      "chats" => channels,
+      "chats" => chats,
       "users" => users,
       "updates" => updates,
     }
@@ -136,9 +128,9 @@ defmodule Mtproto2json.Decoder.Helpers do
     |> Enum.filter(&not(is_nil(&1)))
 
     %{
-      users:    decode2map(users),
-      channels: decode2map(channels),
-      updates:  decoded_updates
+      users:   decode2map(users),
+      chats:   decode2map(chats),
+      updates: decoded_updates,
     }
   end
 
@@ -169,7 +161,7 @@ defmodule Mtproto2json.Decoder.Helpers do
   def decode(
     %{
       "_cons" => "messages.dialogs",
-      "chats" => channels,
+      "chats" => chats,
       "users" => users,
       # "updates" => updates,
       "dialogs" => dialogs,
@@ -177,8 +169,8 @@ defmodule Mtproto2json.Decoder.Helpers do
     # Logger.warn inspect dialogs
 
     %{
-      users:    decode2map(users),
-      channels: decode2map(channels),
+      users: decode2map(users),
+      chats: decode2map(chats),
       # dialogs:  decode2map(dialogs),
     }
   end

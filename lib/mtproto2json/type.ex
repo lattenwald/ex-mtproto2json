@@ -2,7 +2,7 @@ defmodule Mtproto2json.Type.User do
   defstruct [:id, :first_name, :last_name, :username, :phone, {:bot, false}, :access_hash]
 end
 
-defmodule Mtproto2json.Type.Channel do
+defmodule Mtproto2json.Type.Chat do
   defstruct [:id, :title, :access_hash]
 end
 

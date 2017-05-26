@@ -1,4 +1,4 @@
-defmodule Mtproto2json.Sup do
+defmodule Mtproto2json.Supervisor do
   require Logger
   use Supervisor
 
@@ -24,16 +24,3 @@ defmodule Mtproto2json.Sup do
     supervise(children, strategy: :simple_one_for_one)
   end
 end
-
-# {:inlineMarkup,
-#  [
-#    %{data: "bXNnIC0yNDEyNzAxNTQ=",
-#      text: "Windmill"},
-#    %{data: "bXNnIC0xMDAxMDcyNzI1Mzkx",
-#      text: "🥔 ответики 🥔"},
-#    %{data: "bXNnIDEyMjI0NzE3OA==",
-#      text: "@lattenwald"},
-#    %{data: "bXNnIC0xMDAxMTE1Nzc1NTA2",
-#      text: "Aperture Labs Test Facility"},
-#    %{data: "bXNnIDE2ODc1NDU5MQ==",
-#      text: "@mnikat"}]}

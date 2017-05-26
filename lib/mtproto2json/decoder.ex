@@ -3,14 +3,14 @@ defmodule Mtproto2json.Decoder do
   use GenServer
 
   alias Mtproto2json.Decoder.Helpers
-  alias Mtproto2json.Type.Channel
+  alias Mtproto2json.Type.Chat
 
-  defstruct users: %{}, channels: %{}, callback: nil
+  defstruct users: %{}, chats: %{}, manager: nil
 
   # interface
-  def start_link(name, cb) do
+  def start_link(name, module) do
     Logger.info "#{__MODULE__} starting, named #{inspect name}"
-    GenServer.start_link(__MODULE__, cb, name: via_tuple(name))
+    GenServer.start_link(__MODULE__, module, name: via_tuple(name))
   end
 
   def incoming(name, data=%{}) do
@@ -19,7 +19,7 @@ defmodule Mtproto2json.Decoder do
   end
 
   def find(name, what, id)
-  when what in [:channels, :users] do
+  when what in [:chats, :users] do
     GenServer.call(via_tuple(name), {:find, what, id})
   end
 
@@ -27,9 +27,17 @@ defmodule Mtproto2json.Decoder do
     GenServer.call(via_tuple(name), :get_state)
   end
 
+  def alive?(name) do
+    name |> via_tuple |> Process.alive?
+  end
+
   # callbacks
-  def init(cb) do
-    {:ok, %__MODULE__{callback: cb}}
+  def init(module) do
+    {:ok, manager} = GenEvent.start_link([])
+    case GenEvent.add_handler(manager, module, []) do
+      :ok              -> {:ok, %__MODULE__{manager: manager}}
+      {:error, reason} -> {:stop, reason}
+    end
   end
 
   def handle_call({:incoming, data}, _from, state) do
@@ -39,11 +47,11 @@ defmodule Mtproto2json.Decoder do
     end
 
     new_users = Map.merge(state.users, data[:users] || %{}, merger)
-    new_channels = Map.merge(state.channels, data[:channels] || %{}, merger)
+    new_chats = Map.merge(state.chats, data[:chats] || %{}, merger)
 
     new_state = state
     |> Map.put(:users, new_users)
-    |> Map.put(:channels, new_channels)
+    |> Map.put(:chats, new_chats)
 
     if data[:updates] != nil do
       send self(), {:updates, data.updates}
@@ -54,9 +62,9 @@ defmodule Mtproto2json.Decoder do
 
   def handle_call({:find, what, id}, _from, state) do
     res = case what do
-            :channels -> state.channels[id]
-            :users    -> state.users[id]
-            _         -> nil
+            :chats -> state.chats[id]
+            :users -> state.users[id]
+            _      -> nil
           end
     {:reply, res, state}
   end
@@ -65,7 +73,7 @@ defmodule Mtproto2json.Decoder do
     {:reply, state, state}
   end
 
-  def handle_info({:updates, updates}, state=%{callback: cb}) do
+  def handle_info({:updates, updates}, state=%{manager: manager}) do
     Logger.debug "processing updates #{inspect updates}"
 
     updates
@@ -77,7 +85,8 @@ defmodule Mtproto2json.Decoder do
       if is_nil(s) or is_nil(r), do: Logger.warn inspect m
       m
     end)
-    |> Enum.map(&cb.(&1))
+    |> Stream.map(&GenEvent.sync_notify(manager, &1))
+    |> Stream.run
 
     {:noreply, state}
   end
@@ -98,10 +107,10 @@ defmodule Mtproto2json.Decoder do
   defp get_sender(%{users: users},  %{user_id: id}) when not(is_nil id), do: users[id]
   defp get_sender(%{users: users},  %{from_id: id}) when not(is_nil id), do: users[id]
   defp get_sender(
-    %{channels: channels},
+    %{chats: chats},
     %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}}
   ) when not(is_nil id) do
-    channels[id]
+    chats[id]
   end
   defp get_sender(state, stuff) do
     Logger.warn "failed detecting sender #{inspect stuff}"
@@ -109,26 +118,22 @@ defmodule Mtproto2json.Decoder do
   end
 
   def get_recipient(
-    %{channels: channels},
+    %{chats: chats},
     %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}}
-  ), do: channels[id]
-  def get_recipient(
-    %{channels: channels},
-    %{to_id: %{"_cons" => "peerChat", "chat_id" => id}}
-  ), do: channels[id]
+  ), do: chats[id]
   def get_recipient(
     %{users: users},
     %{to_id: %{"_cons" => "peerUser", "user_id" => id}}
   ), do: users[id]
   def get_recipient(%{users: users}, %{out: true, user_id: id}) when not(is_nil id), do: users[id]
   def get_recipient(%{users: users}, %{user_id: id}) when not(is_nil id), do: :self
-  def get_recipient(%{channels: channels}, %{chat_id: id}) when not(is_nil id), do: channels[id]
+  def get_recipient(%{chats: chats}, %{chat_id: id}) when not(is_nil id), do: chats[id]
   def get_recipient(_state, other) do
     Logger.warn "failed detecting recipient #{inspect other}"
     nil
   end
 
-  def get_replyto(%{recipient: r = %Channel{}}), do: r
+  def get_replyto(%{recipient: r = %Chat{}}), do: r
   def get_replyto(%{sender: :self, recipient: r}), do: r
   def get_replyto(%{sender: s}), do: s
 

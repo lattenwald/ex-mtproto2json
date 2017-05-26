@@ -2,7 +2,7 @@ defmodule Mtproto2json.Msg do
   @random_upper 1000000000
 
   alias Mtproto2json.Type.User
-  alias Mtproto2json.Type.Channel
+  alias Mtproto2json.Type.Chat
 
   def cons(constructor, params \\ []) do
     Enum.into(params, %{:_cons => constructor})
@@ -74,8 +74,8 @@ defmodule Mtproto2json.Msg do
     %{"_cons" => "inputPeerUser", "user_id" => id, "access_hash" => access_hash}
   end
 
-  def inputPeer(%Channel{access_hash: access_hash, id: id}) do
-    %{"_cons" => "inputPeerChannel", "channel_id" => id, "access_hash" => access_hash}
+  def inputPeer(%Chat{id: id}) do
+    %{"_cons" => "inputPeerChat", "chat_id" => id}
   end
 
   def forwardMessage(to, from, msg_id) do
