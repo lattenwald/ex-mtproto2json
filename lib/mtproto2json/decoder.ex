@@ -19,6 +19,11 @@ defmodule Mtproto2json.Decoder do
     process(name, decoded)
   end
 
+  def find(name, :users, username)
+  when is_binary(username) do
+    GenServer.call(via_tuple(name), {:find_username, username})
+  end
+
   def find(name, what, id)
   when what in [:chats, :users] do
     GenServer.call(via_tuple(name), {:find, what, id})
@@ -68,6 +73,18 @@ defmodule Mtproto2json.Decoder do
             _      -> nil
           end
     {:reply, res, state}
+  end
+
+  def handle_call({:find_username, username}, _from, state) do
+    username = String.downcase(username)
+
+    user = state.users
+    |> Map.values
+    |> Enum.filter(&not(is_nil &1.username))
+    |> Enum.filter(&(String.downcase(&1.username) == username))
+    |> List.first
+
+    {:reply, user, state}
   end
 
   def handle_call(:get_state, _from, state) do

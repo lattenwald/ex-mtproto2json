@@ -4,7 +4,7 @@ defmodule Mtproto2json.WorkerSup do
 
   # interface
   def start_link(port, name, handler, session) do
-    Logger.info "#{__MODULE__} starting, named #{name}"
+    Logger.info "#{__MODULE__} starting, named #{inspect name}"
 
     Supervisor.start_link(
       __MODULE__,
