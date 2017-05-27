@@ -46,7 +46,8 @@ defmodule Mtproto2json.DevHandler do
 
   # defp pp(msg), do: IO.inspect msg
   defp pp(%Event{name: name, data: data}) do
-    IO.puts "#{DateTime.to_string(DateTime.utc_now)} #{name} #{pp data}"
+    time = :io_lib.format '~4..0B/~2..0B/~2..0B ~2..0B:~2..0B:~2..0B', (:calendar.local_time |> Tuple.to_list |> Enum.map(&Tuple.to_list(&1)) |> List.flatten)
+    IO.puts "#{time} #{name} #{pp data}"
   end
   defp pp(%Message{
         id: id,
