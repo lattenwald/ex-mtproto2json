@@ -31,6 +31,7 @@ defmodule Mtproto2json.Connector do
   def call(name, data=%{}) do
     resp = GenServer.call(via_tuple(name), {:call, data})
     Dec.incoming(name, resp)
+    resp
   end
 
   # callbacks
