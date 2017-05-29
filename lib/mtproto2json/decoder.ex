@@ -122,7 +122,7 @@ defmodule Mtproto2json.Decoder do
     Logger.debug "not processing #{inspect data}"
   end
 
-  defp get_sender(_state, msg=%{out: true}), do: :self
+  defp get_sender(_state, %{out: true}), do: :self
   defp get_sender(%{users: users},  %{user_id: id}) when not(is_nil id), do: users[id]
   defp get_sender(%{users: users},  %{from_id: id}) when not(is_nil id), do: users[id]
   defp get_sender(
@@ -131,7 +131,7 @@ defmodule Mtproto2json.Decoder do
   ) when not(is_nil id) do
     chats[id]
   end
-  defp get_sender(state, stuff) do
+  defp get_sender(_state, stuff) do
     Logger.warn "failed detecting sender #{inspect stuff}"
     nil
   end
@@ -145,7 +145,7 @@ defmodule Mtproto2json.Decoder do
     %{to_id: %{"_cons" => "peerUser", "user_id" => id}}
   ), do: users[id]
   def get_recipient(%{users: users}, %{out: true, user_id: id}) when not(is_nil id), do: users[id]
-  def get_recipient(%{users: users}, %{user_id: id}) when not(is_nil id), do: :self
+  def get_recipient(_state, %{user_id: id}) when not(is_nil id), do: :self
   def get_recipient(%{chats: chats}, %{chat_id: id}) when not(is_nil id), do: chats[id]
   def get_recipient(_state, other) do
     Logger.warn "failed detecting recipient #{inspect other}"
@@ -153,6 +153,7 @@ defmodule Mtproto2json.Decoder do
   end
 
   def get_replyto(%{recipient: r = %Chat{}}), do: r
+  def get_replyto(%{recipient: r = %Channel{}}), do: r
   def get_replyto(%{sender: :self, recipient: r}), do: r
   def get_replyto(%{sender: s}), do: s
 

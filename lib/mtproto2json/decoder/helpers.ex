@@ -161,7 +161,7 @@ defmodule Mtproto2json.Decoder.Helpers do
       "chats" => chats,
       "users" => users,
       # "updates" => updates,
-      "dialogs" => dialogs,
+      # "dialogs" => dialogs,
     }) do
     # Logger.warn inspect dialogs
 

@@ -45,7 +45,6 @@ defmodule Mtproto2json.DevHandler do
         id: id,
         sender: s,
         recipient: r,
-        replyto: rto,
         message: m,
         media: media,
         reply_markup: markup
@@ -61,7 +60,6 @@ defmodule Mtproto2json.DevHandler do
 
     "[#{id}] #{pp s} -> #{pp r} : #{msg}#{pp markup}"
   end
-  defp pp(other, name), do: "#{name} #{inspect other}"
   defp pp(%Chat{title: t}) when not(is_nil t), do: "(chat #{t})"
   defp pp(%Channel{title: t}) when not(is_nil t), do: "(channel #{t})"
   defp pp(%User{username: u}) when not(is_nil u), do: "@#{u}"

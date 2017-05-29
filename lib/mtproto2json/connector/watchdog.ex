@@ -2,7 +2,8 @@ defmodule Mtproto2json.Connector.Watchdog do
   require Logger
   use GenServer
 
-  @watchdog_period 60000
+  @watchdog_period  Application.get_env(:mtproto2json, :watchdog_period,  60000)
+  @watchdog_timeout Application.get_env(:mtproto2json, :watchdog_timeout, 30000)
 
   # interface
   def start_link(name) do
@@ -19,7 +20,7 @@ defmodule Mtproto2json.Connector.Watchdog do
 
   def handle_info(:watchdog, name) do
     msg = Mtproto2json.Msg.updateStatus()
-    res = Mtproto2json.Connector.call(name, msg)
+    res = Mtproto2json.Connector.call(name, msg, timeout: 30000)
     Logger.info "#{name} updating status: #{inspect res}"
     {:noreply, name}
   end
