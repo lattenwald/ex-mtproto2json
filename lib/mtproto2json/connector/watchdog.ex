@@ -20,7 +20,7 @@ defmodule Mtproto2json.Connector.Watchdog do
 
   def handle_info(:watchdog, name) do
     msg = Mtproto2json.Msg.updateStatus()
-    res = Mtproto2json.Connector.call(name, msg, timeout: 30000)
+    res = Mtproto2json.Connector.call(name, msg, @watchdog_timeout)
     Logger.info "#{name} updating status: #{inspect res}"
     {:noreply, name}
   end

@@ -23,13 +23,13 @@ defmodule Mtproto2json.Connector do
     res
   end
 
-  def send(name, data=%{}, opts \\ []) do
+  def send(name, data=%{}, timeout \\ 5000) do
     data = Poison.encode!(data) <> "\n"
-    GenServer.call(via_tuple(name), {:send, data}, opts)
+    GenServer.call(via_tuple(name), {:send, data}, timeout)
   end
 
-  def call(name, data=%{}, opts \\ []) do
-    resp = GenServer.call(via_tuple(name), {:call, data}, opts)
+  def call(name, data=%{}, timeout \\ 5000) do
+    resp = GenServer.call(via_tuple(name), {:call, data}, timeout)
     Dec.incoming(name, resp)
     resp
   end
