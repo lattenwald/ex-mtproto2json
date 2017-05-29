@@ -4,6 +4,7 @@ defmodule Mtproto2json.Decoder do
 
   alias Mtproto2json.Decoder.Helpers
   alias Mtproto2json.Type.Chat
+  alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Event
 
   defstruct users: %{}, chats: %{}, manager: nil, name: nil
@@ -98,7 +99,7 @@ defmodule Mtproto2json.Decoder do
     |> Stream.filter(&not(is_nil(&1)))
     |> Stream.map(&Map.put(&1, :sender,    get_sender(state, &1)))
     |> Stream.map(&Map.put(&1, :recipient, get_recipient(state, &1)))
-    |> Stream.map(&Map.put(&1, :replyto, get_replyto(&1)))
+    |> Stream.map(&Map.put(&1, :replyto,   get_replyto(&1)))
     |> Stream.map(fn m=%{sender: s, recipient: r} ->
       if is_nil(s) or is_nil(r), do: Logger.warn inspect m
       m

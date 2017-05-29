@@ -15,15 +15,6 @@ defmodule Mtproto2json.Dev do
     Mtproto2json.new name, Mtproto2json.DevHandler, auth(authfile)
   end
 
-  def tochat(what, chat_id \\ 241270154, name \\ 1) do
-    Mtproto2json.call name, Mtproto2json.Msg.chatMessage(chat_id, what)
-  end
-
-  def touser(what, user \\ nil, name \\ 1) do
-    user = user || decstate(name).users[122247178]
-    Mtproto2json.call name, Mtproto2json.Msg.userMessage(user, what)
-  end
-
   def decstate(name) do
     Mtproto2json.Decoder.get_state name
   end
@@ -36,6 +27,7 @@ defmodule Mtproto2json.DevHandler do
   alias Mtproto2json.Type.Message
   alias Mtproto2json.Type.User
   alias Mtproto2json.Type.Chat
+  alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Event
 
   def handle_event(event, state) do
@@ -70,7 +62,8 @@ defmodule Mtproto2json.DevHandler do
     "[#{id}] #{pp s} -> #{pp r} : #{msg}#{pp markup}"
   end
   defp pp(other, name), do: "#{name} #{inspect other}"
-  defp pp(%Chat{title: t}) when not(is_nil t), do: "(#{t})"
+  defp pp(%Chat{title: t}) when not(is_nil t), do: "(chat #{t})"
+  defp pp(%Channel{title: t}) when not(is_nil t), do: "(channel #{t})"
   defp pp(%User{username: u}) when not(is_nil u), do: "@#{u}"
   defp pp(%User{first_name: f}) when not(is_nil f), do: f
   defp pp(nil), do: ""

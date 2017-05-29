@@ -3,11 +3,8 @@ defmodule Mtproto2json.Decoder.Helpers do
 
   alias Mtproto2json.Type.User
   alias Mtproto2json.Type.Chat
+  alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Message
-
-  require User
-  require Chat
-  require Message
 
   def decode(%{"_cons" => "document", "attributes" => attrs}) do
     attrList = attrs |> Enum.map(&(&1["_cons"]))
@@ -44,7 +41,7 @@ defmodule Mtproto2json.Decoder.Helpers do
     |> Enum.map(&({&1, chan[Atom.to_string &1]}))
     |> Enum.into(%{})
 
-    struct(Chat, map)
+    struct(Channel, map)
   end
 
   def decode(

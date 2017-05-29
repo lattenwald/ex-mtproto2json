@@ -3,6 +3,7 @@ defmodule Mtproto2json.Msg do
 
   alias Mtproto2json.Type.User
   alias Mtproto2json.Type.Chat
+  alias Mtproto2json.Type.Channel
 
   def cons(constructor, params \\ []) do
     Enum.into(params, %{:_cons => constructor})
@@ -19,16 +20,6 @@ defmodule Mtproto2json.Msg do
       "messages.getDialogs",
       offset_date: 0, offset_id: 0, offset_peer: cons("inputPeerEmpty"), limit: 0
     ) |> msg
-  end
-
-  def chatMessage(chat_id, text) do
-    peer = "inputPeerChat" |> cons(chat_id: chat_id)
-    sendMessage(peer, text)
-  end
-
-  def userMessage(%{id: user_id, access_hash: access_hash}, text) do
-    peer = "inputPeerUser" |> cons(user_id: user_id, access_hash: access_hash)
-    sendMessage(peer, text)
   end
 
   def sendMessage(peer, text) do
@@ -71,11 +62,15 @@ defmodule Mtproto2json.Msg do
   def inputPeer(nil), do: nil
 
   def inputPeer(%User{access_hash: access_hash, id: id}) do
-    %{"_cons" => "inputPeerUser", "user_id" => id, "access_hash" => access_hash}
+    "inputPeerUser" |> cons(user_id: id, access_hash: access_hash)
   end
 
   def inputPeer(%Chat{id: id}) do
-    %{"_cons" => "inputPeerChat", "chat_id" => id}
+    "inputPeerChat" |> cons(chat_id: id)
+  end
+
+  def inputPeer(%Channel{id: id, access_hash: access_hash}) do
+    "inputPeerChannel" |> cons(channel_id: id, access_hash: access_hash)
   end
 
   def forwardMessage(to, from, msg_id) do
