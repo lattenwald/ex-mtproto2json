@@ -1,10 +1,12 @@
 defmodule Mtproto2json do
+  require Logger
+
   @registry Application.get_env(:mtproto2json, :registry_name)
 
   def registry, do: @registry
 
-  def new(name, handler, session) do
-    Mtproto2json.Workers.start_child(name, handler, session)
+  def new(name, session) do
+    Mtproto2json.Workers.start_child(name, session)
   end
 
   def stop(name, reason \\ :shutdown) do
@@ -26,6 +28,7 @@ defmodule Mtproto2json do
   end
 
   def add_event_handler(name, module, opts \\ []) do
+    Logger.info "adding event handler #{inspect module} to #{inspect name}"
     manager = Mtproto2json.Decoder.get_manager(name)
     GenEvent.add_handler(manager, module, opts)
   end

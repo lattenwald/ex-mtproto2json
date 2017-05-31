@@ -13,8 +13,8 @@ defmodule Mtproto2json.Workers do
     )
   end
 
-  def start_child(name, handler, session) do
-    Supervisor.start_child(__MODULE__, [name, handler, session])
+  def start_child(name, session) do
+    Supervisor.start_child(__MODULE__, [name, session])
   end
 
   # callbacks

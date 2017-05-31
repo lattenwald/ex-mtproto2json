@@ -10,9 +10,9 @@ defmodule Mtproto2json.Decoder do
   defstruct users: %{}, chats: %{}, manager: nil, name: nil
 
   # interface
-  def start_link(name, module) do
+  def start_link(name) do
     Logger.info "#{__MODULE__} starting, named #{inspect name}"
-    GenServer.start_link(__MODULE__, [name, module], name: via_tuple(name))
+    GenServer.start_link(__MODULE__, name, name: via_tuple(name))
   end
 
   def incoming(name, data=%{}) do
@@ -43,12 +43,9 @@ defmodule Mtproto2json.Decoder do
   end
 
   # callbacks
-  def init([name, module]) do
+  def init(name) do
     {:ok, manager} = GenEvent.start_link([])
-    case GenEvent.add_handler(manager, module, []) do
-      :ok              -> {:ok, %__MODULE__{manager: manager, name: name}}
-      {:error, reason} -> {:stop, reason}
-    end
+    {:ok, %__MODULE__{manager: manager, name: name}}
   end
 
   def handle_call({:incoming, data}, _from, state) do

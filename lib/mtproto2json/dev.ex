@@ -12,7 +12,8 @@ defmodule Mtproto2json.Dev do
   end
 
   def start(name, authfile) do
-    Mtproto2json.new name, Mtproto2json.DevHandler, auth(authfile)
+    Mtproto2json.new name, auth(authfile)
+    Mtproto2json.add_event_handler name, Mtproto2json.DevHandler
   end
 
   def decstate(name) do
