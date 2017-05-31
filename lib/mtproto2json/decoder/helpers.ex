@@ -96,6 +96,8 @@ defmodule Mtproto2json.Decoder.Helpers do
     {:keyboard_markup, buttons}
   end
 
+  def decode(%{"_cons" => "updateEditMessage"}), do: nil
+
   def decode(msg=%{"_cons" => "message"}) do
     out          = decode(msg["out"]) || false
     media        = decode(msg["media"])
