@@ -97,13 +97,14 @@ defmodule Mtproto2json.Decoder.Helpers do
   end
 
   def decode(msg=%{"_cons" => "message"}) do
-    out = decode(msg["out"]) || false
-    media = decode(msg["media"])
+    out          = decode(msg["out"]) || false
+    media        = decode(msg["media"])
     reply_markup = decode(msg["reply_markup"])
+    fwd          = not is_nil(msg["fwd_from"])
 
     map = [:id, :from_id, :to_id, :user_id, :message]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
-    |> Enum.into(%{out: out, media: media, reply_markup: reply_markup})
+    |> Enum.into(%{out: out, media: media, reply_markup: reply_markup, fwd: fwd})
 
     if map.message == "" and is_nil(media) do
       Logger.warn "empty message: #{inspect msg}"
@@ -133,10 +134,11 @@ defmodule Mtproto2json.Decoder.Helpers do
 
   def decode(msg=%{"_cons" => "updateShortMessage"}) do
     out = decode(msg["out"]) || false
+    fwd = not is_nil(msg["fwd_from"])
 
     map = [:id, :from_id, :user_id, :message]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
-    |> Enum.into(%{out: out})
+    |> Enum.into(%{out: out, fwd: fwd})
 
     msg = struct(Message, map)
 
@@ -145,10 +147,11 @@ defmodule Mtproto2json.Decoder.Helpers do
 
   def decode(msg=%{"_cons" => "updateShortChatMessage"}) do
     out = decode(msg["out"]) || false
+    fwd = not is_nil(msg["fwd_from"])
 
     map = [:id, :from_id, :user_id, :chat_id, :message]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
-    |> Enum.into(%{out: out})
+    |> Enum.into(%{out: out, fwd: fwd})
 
     msg = struct(Message, map)
 

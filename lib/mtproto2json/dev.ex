@@ -18,6 +18,11 @@ defmodule Mtproto2json.Dev do
   def decstate(name) do
     Mtproto2json.Decoder.get_state name
   end
+
+  def loginspect(stuff) do
+    Logger.warn "#{inspect stuff}"
+    stuff
+  end
 end
 
 defmodule Mtproto2json.DevHandler do
@@ -47,7 +52,8 @@ defmodule Mtproto2json.DevHandler do
         recipient: r,
         message: m,
         media: media,
-        reply_markup: markup
+        reply_markup: markup,
+        fwd: f
     }
   ) do
     msg = m
@@ -58,7 +64,7 @@ defmodule Mtproto2json.DevHandler do
          other -> other
        end
 
-    "[#{id}] #{pp s} -> #{pp r} : #{msg}#{pp markup}"
+    "[#{id}] #{pp s} #{if f, do: "[fwd] "}-> #{pp r} : #{msg}#{pp markup}"
   end
   defp pp(%Chat{title: t}) when not(is_nil t), do: "(chat #{t})"
   defp pp(%Channel{title: t}) when not(is_nil t), do: "(channel #{t})"

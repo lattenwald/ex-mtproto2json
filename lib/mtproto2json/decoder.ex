@@ -34,6 +34,10 @@ defmodule Mtproto2json.Decoder do
     GenServer.call(via_tuple(name), :get_state)
   end
 
+  def get_manager(name) do
+    GenServer.call(via_tuple(name), :get_manager)
+  end
+
   def alive?(name) do
     name |> via_tuple |> Process.alive?
   end
@@ -90,6 +94,10 @@ defmodule Mtproto2json.Decoder do
 
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call(:get_manager, _from, state=%{manager: manager}) do
+    {:reply, manager, state}
   end
 
   def handle_info({:updates, updates}, state=%{manager: manager, name: name}) do

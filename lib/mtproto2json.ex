@@ -25,4 +25,9 @@ defmodule Mtproto2json do
     Mtproto2json.Decoder.find(name, :users, id)
   end
 
+  def add_event_handler(name, module, opts \\ []) do
+    manager = Mtproto2json.Decoder.get_manager(name)
+    GenEvent.add_handler(manager, module, opts)
+  end
+
 end
