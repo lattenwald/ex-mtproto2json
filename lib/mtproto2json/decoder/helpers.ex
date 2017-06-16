@@ -26,6 +26,15 @@ defmodule Mtproto2json.Decoder.Helpers do
     :photo
   end
 
+  def decode(
+    %{"_cons"        => "messageMediaContact",
+      "phone_number" => phone,
+      "first_name"   => fname,
+      "last_name"    => lname}
+  ) do
+    {:contact, %{first_name: fname, last_name: lname, phone: phone}}
+  end
+
   def decode(user=%{"_cons" => "user"}) do
     bot = decode(user["bot"]) || false
 
