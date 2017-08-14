@@ -4,7 +4,7 @@ defmodule Mtproto2json.Runner do
 
   alias Porcelain.Process, as: Proc
 
-  @dir Application.get_env(:mtproto2json, :mtproto2json_dir)
+  @dir Application.fetch_env!(:mtproto2json, :mtproto2json_dir)
 
   # interface
   def start_link(port) do
