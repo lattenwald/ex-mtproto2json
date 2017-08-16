@@ -22,6 +22,10 @@ defmodule Mtproto2json.Decoder.Helpers do
     decode(doc)
   end
 
+  def decode(%{"_cons" => "messageMediaInvoice", "title" => _title}) do
+    :invoice
+  end
+
   def decode(%{"_cons" => "messageMediaPhoto", "caption" => _caption}) do
     :photo
   end
@@ -69,6 +73,14 @@ defmodule Mtproto2json.Decoder.Helpers do
   end
 
   def decode(
+    %{"_cons" => "keyboardButtonBuy",
+      "text" => text}
+  ) do
+    %{buy_text: text}
+  end
+
+
+  def decode(
     %{"_cons" => "keyboardButtonSwitchInline",
       "query" => query,
       "text" => text}
@@ -113,7 +125,7 @@ defmodule Mtproto2json.Decoder.Helpers do
     reply_markup = decode(msg["reply_markup"])
     fwd          = not is_nil(msg["fwd_from"])
 
-    map = [:id, :from_id, :to_id, :user_id, :message]
+    map = [:id, :from_id, :to_id, :user_id, :message, :date]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
     |> Enum.into(%{out: out, media: media, reply_markup: reply_markup, fwd: fwd})
 
@@ -147,7 +159,7 @@ defmodule Mtproto2json.Decoder.Helpers do
     out = decode(msg["out"]) || false
     fwd = not is_nil(msg["fwd_from"])
 
-    map = [:id, :from_id, :user_id, :message]
+    map = [:id, :from_id, :user_id, :message, :date]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
     |> Enum.into(%{out: out, fwd: fwd})
 
@@ -160,7 +172,7 @@ defmodule Mtproto2json.Decoder.Helpers do
     out = decode(msg["out"]) || false
     fwd = not is_nil(msg["fwd_from"])
 
-    map = [:id, :from_id, :user_id, :chat_id, :message]
+    map = [:id, :from_id, :user_id, :chat_id, :message, :date]
     |> Enum.map(&({&1, msg[Atom.to_string &1]}))
     |> Enum.into(%{out: out, fwd: fwd})
 
@@ -185,6 +197,13 @@ defmodule Mtproto2json.Decoder.Helpers do
       # dialogs:  decode2map(dialogs),
     }
   end
+
+  # def decode(map=%{"_cons" => "messages.dialogsSlice"}) do
+  #   %{
+  #     users: decode2map(map["users"]),
+  #     chats: decode2map(map["chats"]),
+  #   }
+  # end
 
   def decode(%{"_cons" => "updateShort", "update" => upd}) do
     decode(upd)
@@ -216,6 +235,8 @@ defmodule Mtproto2json.Decoder.Helpers do
     Logger.debug "not decoding unknown data: #{inspect other}"
     nil
   end
+
+  # def decode2map(nil), do: %{}
 
   def decode2map(data) do
     data

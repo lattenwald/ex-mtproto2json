@@ -24,6 +24,55 @@ defmodule Mtproto2json.Dev do
     Logger.warn "#{inspect stuff}"
     stuff
   end
+
+  defp finalizeGetDialogs({users, chats}, name) do
+    Mtproto2json.Decoder.merge_dialogs(name, %{users: users, chats: chats})
+  end
+
+  def getDialogs(name, o_id \\ 0, o_date \\ 0, o_peer \\ nil, users \\ %{}, chats \\ %{}, messages \\ %{}) do
+    o_peer = o_peer || Mtproto2json.Msg.cons("inputPeerEmpty")
+
+    msg = Mtproto2json.Msg.getDialogs(0, o_id, o_date, o_peer) # |> IO.inspect
+    resp = Mtproto2json.call(name, msg)["message"]
+
+    new_users = Map.merge users,
+      Mtproto2json.Decoder.Helpers.decode2map(resp["users"] || [])
+    new_chats = Map.merge chats,
+      Mtproto2json.Decoder.Helpers.decode2map(resp["chats"] || [])
+    new_messages = Map.merge messages,
+      Mtproto2json.Decoder.Helpers.decode2map(resp["messages"] || [])
+
+    # IO.puts "dialogs: #{length resp["dialogs"] || []}"
+    case resp["dialogs"] do
+      nil -> {new_users, new_chats} |> finalizeGetDialogs(name)
+      []  -> {new_users, new_chats} |> finalizeGetDialogs(name)
+      dialogs ->
+        dialog = List.last(dialogs)
+        new_id = dialog["top_message"]
+        new_date = case new_messages[new_id] do
+                     nil ->
+                       Logger.warn "#{__MODULE__} getDialogs #{inspect name}: no message with id #{new_id}"
+                       # TODO: when messages are stored, fetch from storage
+                       0 # actually... (. ﾟーﾟ)
+                     m -> m.date
+                   end
+        new_peer =
+          case dialog["peer"] do
+            %{"_cons" => "peerUser", "user_id" => user_id} ->
+              Mtproto2json.Msg.inputPeer(new_users[user_id])
+            %{"_cons" => "peerChannel", "channel_id" => chat_id} ->
+              Mtproto2json.Msg.inputPeer(new_chats[chat_id])
+            %{"_cons" => "peerChat", "chat_id" => chat_id} ->
+              Mtproto2json.Msg.inputPeer(new_chats[chat_id])
+          end
+        if new_date == 0 do
+          {new_users, new_chats} |> finalizeGetDialogs(name)
+        else
+          getDialogs(name, new_id, new_date, new_peer, new_users, new_chats, new_messages)
+        end
+    end
+  end
+
 end
 
 defmodule Mtproto2json.DevHandler do
@@ -87,6 +136,7 @@ defmodule Mtproto2json.DevHandler do
     " kbd:[#{str}]"
   end
   defp pp(%{game_text: text}), do: "game(#{text})"
+  defp pp(%{buy_text: text}), do: "buy(#{text})"
   defp pp(%{text: text}), do: text
   defp pp(other), do: IO.inspect other
 end

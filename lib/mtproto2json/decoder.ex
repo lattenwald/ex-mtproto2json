@@ -42,6 +42,10 @@ defmodule Mtproto2json.Decoder do
     name |> via_tuple |> Process.alive?
   end
 
+  def merge_dialogs(name, map) do
+    GenServer.call(via_tuple(name), {:merge_dialogs, map})
+  end
+
   # callbacks
   def init(name) do
     {:ok, manager} = GenEvent.start_link([])
@@ -64,6 +68,22 @@ defmodule Mtproto2json.Decoder do
     if data[:updates] != nil do
       send self(), {:updates, data.updates}
     end
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:merge_dialogs, data}, _from, state) do
+    merger = fn
+      _k, %{access_hash: nil}, v2 -> v2
+      _k, v1, _v2 -> v1
+    end
+
+    new_users = Map.merge(state.users, data[:users] || %{}, merger)
+    new_chats = Map.merge(state.chats, data[:chats] || %{}, merger)
+
+    new_state = state
+    |> Map.put(:users, new_users)
+    |> Map.put(:chats, new_chats)
 
     {:reply, :ok, new_state}
   end

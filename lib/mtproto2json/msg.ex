@@ -15,10 +15,12 @@ defmodule Mtproto2json.Msg do
 
   def getState, do: "updates.getState" |> cons |> msg
 
-  def getDialogs(_limit \\ 0, _offset_id \\ 0) do
+  # def getDialogs(limit \\ 0, offset_id \\ 0, offset_peer \\ nil) do
+  def getDialogs(limit \\ 0, offset_id \\ 0, offset_date \\ 0, offset_peer \\ nil) do
+    offset_peer = offset_peer || cons("inputPeerEmpty")
     cons(
       "messages.getDialogs",
-      offset_date: 0, offset_id: 0, offset_peer: cons("inputPeerEmpty"), limit: 0
+      offset_date: offset_date, offset_id: offset_id, offset_peer: offset_peer, limit: limit
     ) |> msg
   end
 
