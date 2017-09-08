@@ -19,7 +19,7 @@ defmodule Mtproto2json.Connector do
     res = {:ok, _pid} = GenServer.start_link(
       __MODULE__, [port, name], name: via_tuple(name)
     )
-    call(name, session) |> IO.inspect
+    call(name, session)
     res
   end
 

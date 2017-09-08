@@ -48,7 +48,7 @@ defmodule Mtproto2json.Decoder do
 
   # callbacks
   def init(name) do
-    {:ok, manager} = GenEvent.start_link([])
+    {:ok, manager} = :gen_event.start_link([])
     {:ok, %__MODULE__{manager: manager, name: name}}
   end
 
@@ -129,7 +129,7 @@ defmodule Mtproto2json.Decoder do
       if is_nil(s) or is_nil(r), do: Logger.warn inspect m
       m
     end)
-    |> Stream.map(&GenEvent.sync_notify(manager, %Event{name: name, data: &1}))
+    |> Stream.map(&:gen_event.sync_notify(manager, %Event{name: name, data: &1}))
     |> Stream.run
 
     {:noreply, state}

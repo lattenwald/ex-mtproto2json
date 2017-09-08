@@ -32,8 +32,8 @@ defmodule Mtproto2json.Dev do
   def getDialogs(name, o_id \\ 0, o_date \\ 0, o_peer \\ nil, users \\ %{}, chats \\ %{}, messages \\ %{}) do
     o_peer = o_peer || Mtproto2json.Msg.cons("inputPeerEmpty")
 
-    msg = Mtproto2json.Msg.getDialogs(0, o_id, o_date, o_peer) # |> IO.inspect
-    resp = Mtproto2json.call(name, msg)["message"]
+    msg = Mtproto2json.Msg.getDialogs(0, o_id, o_date, o_peer)
+    resp = Mtproto2json.call(name, msg, 30000)["message"]
 
     new_users = Map.merge users,
       Mtproto2json.Decoder.Helpers.decode2map(resp["users"] || [])
@@ -42,7 +42,6 @@ defmodule Mtproto2json.Dev do
     new_messages = Map.merge messages,
       Mtproto2json.Decoder.Helpers.decode2map(resp["messages"] || [])
 
-    # IO.puts "dialogs: #{length resp["dialogs"] || []}"
     case resp["dialogs"] do
       nil -> {new_users, new_chats} |> finalizeGetDialogs(name)
       []  -> {new_users, new_chats} |> finalizeGetDialogs(name)
@@ -77,13 +76,19 @@ end
 
 defmodule Mtproto2json.DevHandler do
   require Logger
-  use GenEvent
+  behaviour :gen_event
 
   alias Mtproto2json.Type.Message
   alias Mtproto2json.Type.User
   alias Mtproto2json.Type.Chat
   alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Event
+
+  def init(_), do: {:ok, :ok}
+  def handle_call(_, state), do: {:ok, state}
+  def handle_info(_, state), do: {:ok, state}
+  def code_change(_old_vsn, state, _extra), do: {:ok, state}
+  def terminate(_reason, _state), do: :ok
 
   def handle_event(event, state) do
     Logger.debug "#{inspect event}"
