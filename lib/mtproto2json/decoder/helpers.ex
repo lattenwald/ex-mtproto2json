@@ -2,7 +2,6 @@ defmodule Mtproto2json.Decoder.Helpers do
   require Logger
 
   alias Mtproto2json.Type.User
-  alias Mtproto2json.Type.Chat
   alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Message
 
