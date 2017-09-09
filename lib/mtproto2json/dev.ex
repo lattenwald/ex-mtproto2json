@@ -76,7 +76,7 @@ end
 
 defmodule Mtproto2json.DevHandler do
   require Logger
-  behaviour :gen_event
+  @behaviour :gen_event
 
   alias Mtproto2json.Type.Message
   alias Mtproto2json.Type.User
