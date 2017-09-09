@@ -5,8 +5,8 @@ defmodule Mtproto2json do
 
   def registry, do: @registry
 
-  def new(name, session) do
-    Mtproto2json.Workers.start_child(name, session)
+  def new(name, session, persist \\ false) do
+    Mtproto2json.Workers.start_child(name, session, persist)
   end
 
   def stop(name, reason \\ :shutdown) do

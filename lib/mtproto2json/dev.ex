@@ -11,13 +11,9 @@ defmodule Mtproto2json.Dev do
     |> Map.delete("id")
   end
 
-  def start(name, authfile) do
-    Mtproto2json.new name, auth(authfile)
+  def start(name, authfile, persist \\ false) do
+    Mtproto2json.new name, auth(authfile), persist
     Mtproto2json.add_event_handler name, Mtproto2json.DevHandler
-  end
-
-  def decstate(name) do
-    Mtproto2json.Decoder.get_state name
   end
 
   def loginspect(stuff) do

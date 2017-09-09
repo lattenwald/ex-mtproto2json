@@ -3,19 +3,20 @@ defmodule Mtproto2json.WorkerSup do
   use Supervisor
 
   # interface
-  def start_link(port, name, session) do
+  def start_link(port, name, session, persist) do
     Logger.info "#{__MODULE__} starting, named #{inspect name}"
 
     Supervisor.start_link(
       __MODULE__,
-      [port, name, session]
+      [port, name, session, persist]
     )
   end
 
   # callbacks
-  def init([port, name, session]) do
+  def init([port, name, session, persist]) do
     children = [
-      worker(Mtproto2json.Decoder, [name]),
+      supervisor(Mtproto2json.Decoder.Persisted, [name, persist], restart: :transient),
+      worker(Mtproto2json.Decoder, [name], restart: :transient),
       supervisor(Mtproto2json.Connector.Sup, [port, name, session], restart: :transient)
     ]
 

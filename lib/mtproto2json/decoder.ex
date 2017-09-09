@@ -7,7 +7,9 @@ defmodule Mtproto2json.Decoder do
   alias Mtproto2json.Type.Channel
   alias Mtproto2json.Type.Event
 
-  defstruct users: %{}, chats: %{}, manager: nil, name: nil
+  alias Mtproto2json.Decoder.Persisted
+
+  defstruct manager: nil, name: nil
 
   # interface
   def start_link(name) do
@@ -20,19 +22,8 @@ defmodule Mtproto2json.Decoder do
     process(name, decoded)
   end
 
-  def find(name, :users, username)
-  when is_binary(username) do
-    GenServer.call(via_tuple(name), {:find_username, username})
-  end
-
-  def find(name, what, id)
-  when what in [:chats, :users] do
-    GenServer.call(via_tuple(name), {:find, what, id})
-  end
-
-  def get_state(name) do
-    GenServer.call(via_tuple(name), :get_state)
-  end
+  def find(name, :users, id), do: Persisted.find_user(name, id)
+  def find(name, :chats, id), do: Persisted.find_chat(name, id)
 
   def get_manager(name) do
     GenServer.call(via_tuple(name), :get_manager)
@@ -52,65 +43,21 @@ defmodule Mtproto2json.Decoder do
     {:ok, %__MODULE__{manager: manager, name: name}}
   end
 
-  def handle_call({:incoming, data}, _from, state) do
-    merger = fn
-      _k, %{access_hash: nil}, v2 -> v2
-      _k, v1, _v2 -> v1
-    end
-
-    new_users = Map.merge(state.users, data[:users] || %{}, merger)
-    new_chats = Map.merge(state.chats, data[:chats] || %{}, merger)
-
-    new_state = state
-    |> Map.put(:users, new_users)
-    |> Map.put(:chats, new_chats)
+  def handle_call({:incoming, data}, _from, state=%{name: name}) do
+    Persisted.incoming(name, :users, data[:users])
+    Persisted.incoming(name, :chats, data[:chats])
 
     if data[:updates] != nil do
       send self(), {:updates, data.updates}
     end
 
-    {:reply, :ok, new_state}
+    {:reply, :ok, state}
   end
 
-  def handle_call({:merge_dialogs, data}, _from, state) do
-    merger = fn
-      _k, %{access_hash: nil}, v2 -> v2
-      _k, v1, _v2 -> v1
-    end
-
-    new_users = Map.merge(state.users, data[:users] || %{}, merger)
-    new_chats = Map.merge(state.chats, data[:chats] || %{}, merger)
-
-    new_state = state
-    |> Map.put(:users, new_users)
-    |> Map.put(:chats, new_chats)
-
-    {:reply, :ok, new_state}
-  end
-
-  def handle_call({:find, what, id}, _from, state) do
-    res = case what do
-            :chats -> state.chats[id]
-            :users -> state.users[id]
-            _      -> nil
-          end
-    {:reply, res, state}
-  end
-
-  def handle_call({:find_username, username}, _from, state) do
-    username = String.downcase(username)
-
-    user = state.users
-    |> Map.values
-    |> Enum.filter(&not(is_nil &1.username))
-    |> Enum.filter(&(String.downcase(&1.username) == username))
-    |> List.first
-
-    {:reply, user, state}
-  end
-
-  def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
+  def handle_call({:merge_dialogs, data}, _from, state=%{name: name}) do
+    Persisted.incoming(name, :users, data[:users])
+    Persisted.incoming(name, :chats, data[:chats])
+    {:reply, :ok, state}
   end
 
   def handle_call(:get_manager, _from, state=%{manager: manager}) do
@@ -148,30 +95,27 @@ defmodule Mtproto2json.Decoder do
   end
 
   defp get_sender(_state, %{out: true}), do: :self
-  defp get_sender(%{users: users},  %{user_id: id}) when not(is_nil id), do: users[id]
-  defp get_sender(%{users: users},  %{from_id: id}) when not(is_nil id), do: users[id]
-  defp get_sender(
-    %{chats: chats},
-    %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}}
-  ) when not(is_nil id) do
-    chats[id]
-  end
+  defp get_sender(%{name: name}, %{user_id: id}) when not(is_nil id), do: Persisted.find_user(name, id)
+  defp get_sender(%{name: name}, %{from_id: id}) when not(is_nil id), do: Persisted.find_user(name, id)
+  defp get_sender(%{name: name}, %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}})
+  when not(is_nil id), do: Persisted.find_chat(name, id)
+
   defp get_sender(_state, stuff) do
     Logger.warn "failed detecting sender #{inspect stuff}"
     nil
   end
 
   def get_recipient(
-    %{chats: chats},
+    %{name: name},
     %{to_id: %{"_cons" => "peerChannel", "channel_id" => id}}
-  ), do: chats[id]
+  ), do: Persisted.find_chat(name, id)
   def get_recipient(
-    %{users: users},
+    %{name: name},
     %{to_id: %{"_cons" => "peerUser", "user_id" => id}}
-  ), do: users[id]
-  def get_recipient(%{users: users}, %{out: true, user_id: id}) when not(is_nil id), do: users[id]
+  ), do: Persisted.find_user(name, id)
+  def get_recipient(%{name: name}, %{out: true, user_id: id}) when not(is_nil id), do: Persisted.find_user(name, id)
   def get_recipient(_state, %{user_id: id}) when not(is_nil id), do: :self
-  def get_recipient(%{chats: chats}, %{chat_id: id}) when not(is_nil id), do: chats[id]
+  def get_recipient(%{name: name}, %{chat_id: id}) when not(is_nil id), do: Persisted.find_chat(name, id)
   def get_recipient(_state, other) do
     Logger.warn "failed detecting recipient #{inspect other}"
     nil
