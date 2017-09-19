@@ -9,7 +9,6 @@ defmodule Mtproto2json.Application do
     children = [
       supervisor(Registry, [:unique, Mtproto2json.registry()]),
       supervisor(Mtproto2json.Workers, [@port]),
-      worker(Mtproto2json.Runner, [@port]),
     ]
 
     opts = [strategy: :rest_for_one, name: Mtproto2json.Supervisor]

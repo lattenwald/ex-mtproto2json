@@ -32,7 +32,6 @@ defmodule Mtproto2json.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:porcelain, "~> 2.0"},
       {:poison, "~> 3.1"},
     ]
   end
