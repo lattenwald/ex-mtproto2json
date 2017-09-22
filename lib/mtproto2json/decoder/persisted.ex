@@ -64,11 +64,11 @@ defmodule Mtproto2json.Decoder.Persisted.Data do
       old = get(tup, id)
       cond do
         old == nil ->
-          Logger.info "new #{type} for #{name}: #{inspect data}"
+          Logger.debug "new #{type} for #{name}: #{inspect data}"
           add(tup, id, val)
 
         old.access_hash == nil and val.access_hash != nil ->
-          Logger.info "access_hash #{type} for #{name}: #{inspect data}"
+          Logger.debug "access_hash #{type} for #{name}: #{inspect data}"
           add(tup, id, val)
 
         true -> :ignore
