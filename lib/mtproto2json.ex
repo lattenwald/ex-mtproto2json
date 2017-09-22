@@ -29,8 +29,18 @@ defmodule Mtproto2json do
 
   def add_event_handler(name, module, opts \\ []) do
     Logger.info "adding event handler #{inspect module} to #{inspect name}"
-    manager = Mtproto2json.Decoder.get_manager(name)
-    :gen_event.add_sup_handler(manager, module, opts)
+
+    name
+    |> Mtproto2json.Decoder.get_manager()
+    |> :gen_event.add_sup_handler(module, opts)
+  end
+
+  def delete_event_handler(name, module, args \\ nil) do
+    Logger.info "deleting event handler #{inspect module} from #{inspect name}"
+
+    name
+    |> Mtproto2json.Decoder.get_manager()
+    |> :gen_event.delete_handler(module, args)
   end
 
 end
