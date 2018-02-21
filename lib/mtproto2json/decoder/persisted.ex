@@ -31,8 +31,8 @@ defmodule Mtproto2json.Decoder.Persisted do
   end
 
   ### helpers
-  defp via_name(name), do: {Mtproto2json.registry(), {:decoder_persisted, name}}
-  defp via_tuple(name), do: {:via, Registry, via_name(name)}
+  def via_name(name), do: {Mtproto2json.registry(), {:decoder_persisted, name}}
+  def via_tuple(name), do: {:via, Registry, via_name(name)}
 end
 
 defmodule Mtproto2json.Decoder.Persisted.Data do
@@ -67,11 +67,16 @@ defmodule Mtproto2json.Decoder.Persisted.Data do
           Logger.debug "new #{type} for #{name}: #{inspect data}"
           add(tup, id, val)
 
-        old.access_hash == nil and val.access_hash != nil ->
-          Logger.debug "access_hash #{type} for #{name}: #{inspect data}"
-          add(tup, id, val)
+		true ->
+		  Logger.debug "updated #{type} for #{name}: #{inspect data}"
+		  new =
+			struct val.__struct__, Map.merge(Map.from_struct(old), Map.from_struct(val), fn(_key, old, nil) -> old; (_key, _old, new) -> new end)
 
-        true -> :ignore
+		  if new != old do
+			Logger.debug "old: #{inspect old}"
+			Logger.debug "new: #{inspect new}"
+			add(tup, id, new)
+		  end
       end
     end
   end
